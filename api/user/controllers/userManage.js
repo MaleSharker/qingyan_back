@@ -2,11 +2,100 @@
  * Created by cc on 17/6/27.
  */
 
+const request = require('request');
+const qs = require('querystring');
 const bluebird = require('bluebird');
+const jwt = require('jsonwebtoken');
 const crypto = bluebird.promisifyAll(require('crypto'));
 const nodemailer = require('nodemailer');
 const passport = require('passport');
 const User = require('../models/User');
+
+/**
+ * Create a new local account (email)
+ */
+exports.postEmailSignup = (req, res, next) => {
+    req.assert('email', 'Email is not valid').isEmail();
+    req.assert('password', 'Password must be at least 4 characters long').len(4);
+    req.assert('confirmPassword', 'Passwords do not match').equals(req.body.password);
+    req.sanitize('email').normalizeEmail({ remove_dots: false });
+
+    const errors = req.validationErrors();
+
+    if (errors){
+        res.json({status: 0, result: {errors}, msg:'validationErrors'});
+        return
+    }
+    const user = new User({
+        email: req.body.email,
+        password: req.body.password
+    });
+
+    User.findOne({ email: req.body.email }, (err, existingUser) => {
+        if (err){ return next(err); }
+        if (existingUser){
+            res.json({status: 0, result:{}, msg:'用户已经存在'});
+            return
+        }
+        user.save((err) => {
+            if (err) { return next(err); }
+            req.login(user, (err) => {
+                if (err) { res.json({status: 0, result: {err}, msg:'Create user failed.'}); }
+                res.json({status: 1,result:{},msg:'创建新用户成功'});
+            })
+        });
+    });
+};
+
+/**
+ * 获取手机验证码
+ */
+exports.postVerifyCode = (req, res, next) => {
+    req.assert('phone','Phone is not valid').len(11);
+
+    const errors = req.validationErrors();
+    if (errors) {
+        res.json({status: 0,result:{errors}, msg:'Phone validation error'});
+        return;
+    }
+    const options = {
+        url: 'https://sms.yunpian.com/v2/sms/single_send.json',
+        method: 'POST',
+        header:{
+            'Accept':'application/json;charset=utf-8',
+            'Content-Type':'application/x-www-form-urlencoded;charset=utf-8',
+        },
+        body:qs.stringify({
+            'apikey':process.env.SMS_KEY,
+            'mobile':req.body.phone,
+            'text': '【齐天大圣】您的验证码是012345'
+        })
+    };
+    // {
+    //     url: 'https://api.netease.im/sms/sendcode.action',
+    //         method: 'POST',
+    //     headers:{
+    //     'Content-Type':'application/x-www-form-urlencoded',
+    //         'AppKey':'35638fcf550353bde3c3d4c87883d3fa',
+    //         'CurTime':'1443592222',
+    //         'CheckSum':'9e9db3b6c9abb2e1962cf3e6f7316fcc55583f86',
+    //         'Nonce':'888888'
+    // },
+    //     qs:{
+    //         'mobile':'18320857265',
+    //             'codeLen': '6'
+    //     }
+    // }
+    request(options,(err,request,body) => {
+        if (err) {
+            res.json({status:0,result:{err}, msg:'Failed'});
+        }else if (request.statusCode == 200){
+            res.json({status: 1, result:{body}, msg:'Success'});
+        }else {
+            res.json({status: 1, result:{body}, msg:'Success'});
+        }
+    });
+};
 
 /**
  * Sign in using email and password
@@ -42,42 +131,6 @@ exports.logout = (req, res) => {
     req.logout();
     res.json({status: 1,result:{}, msg:"登出成功"});
 };
-
-/**
- * Create a new local account
- */
-exports.postSignup = (req, res, next) => {
-    req.assert('email', 'Email is not valid').isEmail();
-    req.assert('password', 'Password must be at least 4 characters long').len(4);
-    req.assert('confirmPassword', 'Passwords do not match').equals(req.body.password);
-    req.sanitize('email').normalizeEmail({ remove_dots: false });
-
-    const errors = req.validationErrors();
-
-    if (errors){
-        res.json({status: 0, result: {}, msg:''});
-    }
-
-    const User = new User({
-        email: req.body.email,
-        password: req.body.password
-    });
-
-    User.findOne({ email: req.body.email }, (err, existingUser) => {
-        if (err){ return next(err); }
-        if (existingUser){
-            res.json({status: 0, result:{}, msg:'用户已经存在'});
-        }
-        user.save((err) => {
-            if (err) { return next(err); }
-            req.login(user, (err) => {
-                if (err) { return next(err); }
-                res.json({status: 1,result:{},msg:'创建新用户成功'});
-            })
-        });
-    });
-};
-
 
 exports.postUpdateProfile = (req, res, next) => {
     req.assert('email', 'Please enter a valid email address.').isEmail();

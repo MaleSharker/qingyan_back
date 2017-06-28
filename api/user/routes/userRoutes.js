@@ -2,14 +2,24 @@
  * Created by cc on 17/6/27.
  */
 
+const path = require('path');
 
 module.exports = function (app) {
-    var userManage = require('../controllers/userManage');
+    const userManage = require('../controllers/userManage');
+
+    const passportConfig = require(global.apiPathPrefix + '/config/passport');
+
+    /**
+     * 发送验证码
+     */
+    app.route('/client/v1/user/verigyCode')
+        .post(userManage.postVerifyCode);
 
     /**
      * 创建用户 (邮箱)
      */
-
+    app.route('/client/v1/user/emailSignup')
+        .post(userManage.postEmailSignup);
 
     /**
      * 用户邮箱登录
@@ -37,5 +47,15 @@ module.exports = function (app) {
         .get(userManage.getReset)
         .post(userManage.postReset);
 
+    /**
+     * 更新用户信息
+     */
+    app.route('/client/v1/user/updateProfile')
+        .post(userManage.postUpdateProfile);
 
+    /**
+     * 更新用户密码
+     */
+    app.route('/client/v1/user/updatePwd')
+        .post(userManage.postUpdatePassword);
 };

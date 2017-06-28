@@ -9,21 +9,29 @@ const crypto = require('crypto');
 
 
 const userSchema = new Schema({
-    phone: { type: String, unique: true },
-    email: { type: String, unique: true},
+    phone: { type: String, unique: true ,default:""},
+    email: { type: String, unique: true, default:""},
     password: String,
     passwordResetToken: String,
-    passwordResetExpires: Date,
+    passwordResetExpires: { type:Date, default:Date.now() },
 
-    wechat: { type: String, unique: true },
-    sina: { type: String, unique: true },
+    wechat: { type: String, unique: true, default: ""},
+    sina: { type: String, unique: true, default:"" },
+    facebook: { type: String, unique: true, default:"" },
+    github: { type: String, unique: true, default:"" },
+    steam: String,
+    tokens: Array,
+    verifyCode: {
+        code: { type: String, default:''},
+        createDate: { type:Date, default:Date.now() }
+    },
 
     profile: {
-        name: String,
-        gender: String,
-        location: String,
-        website: String,
-        picture: String
+        name: { type:String, default:'Coder' },
+        gender: { type:String, enum:["Male","Female","Martian"], default:"Martian" },
+        location: { type:String, default: "Mars" },
+        website: { type:String, default:"https://www.baidu.com"},
+        picture: { type:String, default:"" }
     }
 
 },{ timeStamps: true});

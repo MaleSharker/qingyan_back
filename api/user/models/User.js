@@ -10,20 +10,29 @@ const crypto = require('crypto');
 
 const userSchema = new Schema({
     phone: { type: String, unique: true ,default:""},
-    email: { type: String, unique: true, default:""},
+    email: { type: String, default:""},
     password: String,
     passwordResetToken: String,
     passwordResetExpires: { type:Date, default:Date.now() },
 
-    wechat: { type: String, unique: true, default: ""},
-    sina: { type: String, unique: true, default:"" },
-    facebook: { type: String, unique: true, default:"" },
-    github: { type: String, unique: true, default:"" },
+    wechat: { type: String, default: ""},
+    sina: { type: String,  default:"" },
+    facebook: { type: String, default:"" },
+    github: { type: String, default:"" },
     steam: String,
     tokens: Array,
     verifyCode: {
-        code: { type: String, default:''},
-        createDate: { type:Date, default:Date.now() }
+        type: [
+            {
+                code: { type: String, default:''},
+                createDate: { type:Date, default:Date.now() },
+                codeType: {
+                    type:String,
+                    enum:['register','login','retrieve']
+                }
+            }
+        ],
+        default: []
     },
 
     profile: {

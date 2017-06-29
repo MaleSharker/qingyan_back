@@ -12,8 +12,20 @@ module.exports = function (app) {
     /**
      * 发送验证码
      */
-    app.route('/client/v1/user/verigyCode')
-        .post(userManage.postVerifyCode);
+    app.route('/client/v1/user/SMSCode')
+        .post(userManage.postSMSCode);
+
+    /**
+     * 创建用户 (Phone)
+     */
+    app.route('/client/v1/user/phoneSignup')
+        .post(userManage.postPhoneSignup);
+
+    /**
+     * 用户设置密码 (Phone)
+     */
+    app.route('/client/v1/user/resetPassword')
+        .post(userManage.postResetPwd);
 
     /**
      * 创建用户 (邮箱)
@@ -25,7 +37,7 @@ module.exports = function (app) {
      * 用户邮箱登录
      */
     app.route('/client/v1/user/emailLogin')
-        .post(userManage.postLogin);
+        .post(userManage.postEmailLogin);
 
     /**
      * 用户登出

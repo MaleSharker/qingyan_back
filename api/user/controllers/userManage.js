@@ -9,7 +9,238 @@ const jwt = require('jsonwebtoken');
 const crypto = bluebird.promisifyAll(require('crypto'));
 const nodemailer = require('nodemailer');
 const passport = require('passport');
+
+const SwallowUtil = require(global.apiPathPrefix + '/utility/SwallowUtil');
+const ErrorList = require(global.apiPathPrefix + '/errors/errorList');
 const User = require('../models/User');
+
+/**
+ * 获取手机验证码
+ */
+exports.postSMSCode = (req, res, next) => {
+    req.assert('phone','Phone is not valid').len(11);
+    req.assert('verifyCode', 'Encode error').len(32);
+
+    const errors = req.validationErrors();
+    if (errors) {
+        res.json(ErrorList.RegisterVerifyCodeFailed(errors));
+        return;
+    }
+
+    if ((SwallowUtil.md5Encode(req.body.phone + process.env.SMS_ENCODE) !== req.body.verifyCode) || !SwallowUtil.verifyPhoneNumber(req.body.phone)) {
+        res.json(ErrorList.RegisterVerifyCodeFailed({err:'校验失败'}));
+        return;
+    }
+
+    let verifyCode = SwallowUtil.genSMSCode();
+    console.log('verify code - %s', verifyCode);
+    const options = {
+        url: 'https://sms.yunpian.com/v2/sms/single_send.json',
+        method: 'POST',
+        header:{
+            'Accept':'application/json;charset=utf-8',
+            'Content-Type':'application/x-www-form-urlencoded;charset=utf-8',
+        },
+        body:qs.stringify({
+            'apikey':process.env.SMS_KEY,
+            'mobile':req.body.phone,
+            'text': '【齐天大圣】您的验证码是' + verifyCode
+        })
+    };
+
+    const newUser = new User({
+        phone: req.body.phone,
+        verifyCode: [
+            {
+                code: verifyCode,
+                codeType: 'register'
+            }
+        ]
+    });
+    User
+        .findOne({ phone: req.body.phone },(err,user) => {
+            console.log('err - %s , user - %s',err,user);
+            if (err){
+                res.json({status: ErrorList.DBError, resule:{err}, msg:'DB error'});
+            }else if (user){
+                console.log('222');
+                user.verifyCode = [
+                    {
+                        code: verifyCode,
+                        codeType: 'register'
+                    }
+                ];
+                user
+                    .save((err) => {
+                        if (err) {
+                            res.json({ status: 0, result:{err}, msg:'User save error' });
+                            return;
+                        }
+                        request(options,(err,request,body) => {
+                            if (err) {
+                                res.json(ErrorList.RegisterVerifyCodeFailed(err));
+                            }else if (request.statusCode == 200){
+                                res.json(ErrorList.RegisterVerifyCodeSuccess(body));
+                            }else {
+                                res.json(ErrorList.RegisterVerifyCodeSuccess(body));
+                            }
+                        });
+                    });
+            }else {
+                newUser
+                    .save((err) => {
+                        if (err) {
+                            res.json({ status: 0, result:{err}, msg:'User save error' });
+                            return;
+                        }
+                        request(options,(err,request,body) => {
+                            if (err) {
+                                res.json(ErrorList.RegisterVerifyCodeFailed(err));
+                            }else if (request.statusCode == 200){
+                                res.json(ErrorList.RegisterVerifyCodeSuccess(body));
+                            }else {
+                                res.json(ErrorList.RegisterVerifyCodeSuccess(body));
+                            }
+                        });
+                    });
+            }
+        });
+};
+
+/**
+ * 注册新用户 (手机号)
+ * @param req
+ * @param res
+ * @param next
+ */
+exports.postPhoneSignup = (req, res, next) => {
+    req.assert('verifyCode','Verify code is error').len(32);
+    req.assert('code','SMS code is 6 length').len(6);
+
+    const errors = req.validationErrors();
+
+    if (errors) {
+        res.json({ status:ErrorList.Error, result:{errors}, msg:''});
+        return;
+    }
+
+    if ((SwallowUtil.md5Encode(req.body.phone + process.env.SMS_ENCODE) !== req.body.verifyCode) || !SwallowUtil.verifyPhoneNumber(req.body.phone)) {
+        res.json(ErrorList.RegisterVerifyCodeFailed({err:'校验失败'}));
+        return;
+    }
+
+    User
+        .findOne({phone:req.body.phone},(err,user) => {
+            if (err || !user){
+                res.json({status:ErrorList.DBError, result:{err}, msg:'查无此人'});
+                return;
+            }
+            var codeList = user.verifyCode;
+            var createDate;
+            var smsCode;
+            var index = 0;
+            for (index;index < codeList.length; index ++) {
+                let tempObj = codeList[index];
+                if (tempObj.codeType == "register") {
+                    createDate = tempObj.createDate;
+                    smsCode = tempObj.code;
+                    break;
+                }
+            }
+            console.log('create date %s, sms code %s',createDate,smsCode);
+            if (createDate === undefined || smsCode === undefined ) {
+                res.json({status: ErrorList.Error,result: {},msg: '验证码类型错误'});
+                return
+            }
+            //十五分钟内有效
+            if (smsCode !== req.body.code || (createDate.getTime() + 1000 * 60 * 15 < Date.now())) {
+                res.json({status: ErrorList.Error, result:{}, msg:'验证码超时,或者验证码有误'});
+                return;
+            }
+            codeList.splice(index,1);
+            user.verifyCode = codeList;
+            user
+                .save((err) => {
+                    if (err) {
+                        res.json({status:ErrorList.DBError,result:{err}, msg:''});
+                        return
+                    }
+                    let token = jwt.sign({msg:req.body.phone}, process.env.TOKEN_SECRET, {expiresIn : '7 days'});
+                    res.json({status: ErrorList.Success, result:{token:token}, msg:'注册成功'});
+                });
+        });
+
+};
+
+/**
+ * 用户重设密码
+ * @param req
+ * @param res
+ */
+exports.postResetPwd = (req, res, next) => {
+
+    const verifyPhone = () => new Promise((resolve, reject) => {
+        if (!SwallowUtil.verifyPhoneNumber(req.body.phone)) {
+            reject({err:'手机号码格式错误'});
+        }else {
+            resolve();
+        }
+    });
+
+    const verifyToken = () => {
+        return new Promise((resolve, reject) => {
+            jwt.verify(req.body.token, process.env.TOKEN_SECRET, (err, decode) => {
+                if (err) {
+                    reject({err:err});
+                }else {
+                    if (decode.msg !== req.body.phone) {
+                        reject({err:'token 格式错误,不匹配'});
+                    }else {
+                        resolve();
+                    }
+                }
+            });
+        });
+    };
+
+    const resetPwd = () => {
+        User
+            .findOne({phone:req.body.phone})
+            .then((user) => new Promise((resolve, reject) => {
+                if (!user){
+                    res.json({status: ErrorList.DBError, result:{err}, msg:"查无此人"});
+                }
+                user.password = req.body.password;
+                user
+                    .save()
+                    .then((err) => new Promise((resolve, reject) => {
+                        if (err){
+                            reject(err);
+                        }
+                        resolve();
+                    }));
+            }));
+    };
+    verifyPhone()
+        .then(verifyToken)
+        .then(resetPwd)
+        .then((err) => {
+            console.log('send error - - ');
+            if (err) {
+                res.json({status: ErrorList.Error, resule:{err}, msg:'Someting error'});
+            }else {
+                res.json({status: 1, result:{}, msg:'重设密码成功'});
+            }
+        })
+        .catch((err) => {
+            next(err);
+        })
+};
+
+
+exports.postPhoneLogin = (req, res) => {
+
+};
 
 /**
  * Create a new local account (email)
@@ -48,59 +279,9 @@ exports.postEmailSignup = (req, res, next) => {
 };
 
 /**
- * 获取手机验证码
- */
-exports.postVerifyCode = (req, res, next) => {
-    req.assert('phone','Phone is not valid').len(11);
-
-    const errors = req.validationErrors();
-    if (errors) {
-        res.json({status: 0,result:{errors}, msg:'Phone validation error'});
-        return;
-    }
-    const options = {
-        url: 'https://sms.yunpian.com/v2/sms/single_send.json',
-        method: 'POST',
-        header:{
-            'Accept':'application/json;charset=utf-8',
-            'Content-Type':'application/x-www-form-urlencoded;charset=utf-8',
-        },
-        body:qs.stringify({
-            'apikey':process.env.SMS_KEY,
-            'mobile':req.body.phone,
-            'text': '【齐天大圣】您的验证码是012345'
-        })
-    };
-    // {
-    //     url: 'https://api.netease.im/sms/sendcode.action',
-    //         method: 'POST',
-    //     headers:{
-    //     'Content-Type':'application/x-www-form-urlencoded',
-    //         'AppKey':'35638fcf550353bde3c3d4c87883d3fa',
-    //         'CurTime':'1443592222',
-    //         'CheckSum':'9e9db3b6c9abb2e1962cf3e6f7316fcc55583f86',
-    //         'Nonce':'888888'
-    // },
-    //     qs:{
-    //         'mobile':'18320857265',
-    //             'codeLen': '6'
-    //     }
-    // }
-    request(options,(err,request,body) => {
-        if (err) {
-            res.json({status:0,result:{err}, msg:'Failed'});
-        }else if (request.statusCode == 200){
-            res.json({status: 1, result:{body}, msg:'Success'});
-        }else {
-            res.json({status: 1, result:{body}, msg:'Success'});
-        }
-    });
-};
-
-/**
  * Sign in using email and password
  */
-exports.postLogin = (req, res, next) => {
+exports.postEmailLogin = (req, res, next) => {
     req.assert('email', 'Email is not avlid').isEmail();
     req.assert('password', 'Password cannot be blank').notEmpty();
     req.sanitize('email').normalizeEmail({ remove_dots: false });

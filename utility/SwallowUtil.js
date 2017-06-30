@@ -3,6 +3,7 @@
  */
 
 const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
 
 /**
  * 手机号码校验
@@ -34,3 +35,14 @@ exports.genSMSCode = () => {
 exports.md5Encode = (original) => {
     return crypto.createHash('md5').update(original,'utf8').digest('hex');
 };
+
+/**
+ * Token 生成
+ * @param phone
+ * @returns {String|void}
+ */
+exports.genToken = (phone) => {
+    return jwt.sign({msg:phone}, process.env.TOKEN_SECRET, {expiresIn : '7 days'});
+};
+
+

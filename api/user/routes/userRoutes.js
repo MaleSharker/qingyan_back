@@ -28,6 +28,12 @@ module.exports = function (app) {
         .post(userManage.postResetPwd);
 
     /**
+     * 用户登录 (phone & password)
+     */
+    app.route('/client/v1/user/phoneLogin')
+        .post(userManage.postPhoneLogin);
+
+    /**
      * 创建用户 (邮箱)
      */
     app.route('/client/v1/user/emailSignup')

@@ -59,11 +59,9 @@ exports.postSMSCode = (req, res, next) => {
     });
     User
         .findOne({ phone: req.body.phone },(err,user) => {
-            console.log('err - %s , user - %s',err,user);
             if (err){
                 res.json({status: ErrorList.DBError, resule:{err}, msg:'DB error'});
             }else if (user){
-                console.log('222');
                 user.verifyCode = [
                     {
                         code: verifyCode,
@@ -153,10 +151,16 @@ exports.postPhoneSignup = (req, res, next) => {
                 return
             }
             //十五分钟内有效
-            if (smsCode !== req.body.code || (createDate.getTime() + 1000 * 60 * 15 < Date.now())) {
-                res.json({status: ErrorList.Error, result:{}, msg:'验证码超时,或者验证码有误'});
+            if (smsCode !== req.body.code) {
+                res.json({status: ErrorList.Error, result:{}, msg:'验证码有误'});
                 return;
             }
+
+            if (createDate.getTime() + 1000 * 60 * 15 < Date.now()) {
+                res.json({status: ErrorList.Error, result:{}, msg:'验证码超时'});
+                return;
+            }
+
             codeList.splice(index,1);
             user.verifyCode = codeList;
             user
@@ -206,29 +210,26 @@ exports.postResetPwd = (req, res, next) => {
     const resetPwd = () => {
         User
             .findOne({phone:req.body.phone})
-            .then((user) => new Promise((resolve, reject) => {
+            .then((user) => {
                 if (!user){
                     res.json({status: ErrorList.DBError, result:{err}, msg:"查无此人"});
                 }
                 user.password = req.body.password;
-                user
-                    .save()
-                    .then((err) => new Promise((resolve, reject) => {
-                        if (err){
-                            reject(err);
-                        }
+                return user.save().then((user) => new Promise((resolve, reject) => {
+                    if (!user){
+                        reject(err);
+                    }else {
                         resolve();
-                    }));
-            }));
+                    }
+                }));
+            })
+            .catch((err) => next(err))
     };
     verifyPhone()
         .then(verifyToken)
         .then(resetPwd)
-        .then((err) => {
-            console.log('send error - - ');
-            if (err) {
-                res.json({status: ErrorList.Error, resule:{err}, msg:'Someting error'});
-            }else {
+        .then(() => {
+            if (!res.finished) {
                 res.json({status: 1, result:{}, msg:'重设密码成功'});
             }
         })
@@ -237,9 +238,36 @@ exports.postResetPwd = (req, res, next) => {
         })
 };
 
-
+/**
+ * 用户登录 (Phone)
+ * @param req
+ * @param res
+ */
 exports.postPhoneLogin = (req, res) => {
+    if (!SwallowUtil.verifyPhoneNumber(req.body.phone)){
+        res.json({status: 0,result:{}, msg:'手机号码有误' });
+        return
+    }
 
+    User
+        .findOne({phone: req.body.phone},(error,user) => {
+            if (error){
+                res.json({status: ErrorList.DBError, result:{error}, msg:'DB error'});
+                return;
+            }
+            if (!user){
+                res.json({status: ErrorList.Error, result:{error}, msg:'查无此人'})
+            }else {
+                user.comparePassword(req.body.password,(err,isMatch) => {
+                    if (isMatch){
+                        const token = SwallowUtil.genToken(req.body.phone);
+                        res.json({status: ErrorList.Success, result:{token: token}, msg:'用户登录成功'});
+                        return
+                    }
+                    res.json({status: ErrorList.Error, result:{err}, msg:'DB error'});
+                })
+            }
+        })
 };
 
 /**

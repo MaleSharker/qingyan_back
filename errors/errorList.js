@@ -2,12 +2,13 @@
  * Created by cc on 17/6/29.
  */
 
-const ErrorType = {
+exports.ErrorType = {
     Success: 1,
     Error: 0,
     DBError: -2,
     TokenInvalid: -1000,
     TokenRejected: -1001,
+    PasswordErr: -1002,
 };
 
 exports.RegisterVerifyCodeSuccess = (success) => {

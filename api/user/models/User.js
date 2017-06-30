@@ -20,7 +20,7 @@ const userSchema = new Schema({
     facebook: { type: String, default:"" },
     github: { type: String, default:"" },
     steam: String,
-    tokens: Array,
+    token: { type:String, default:""},
     verifyCode: {
         type: [
             {

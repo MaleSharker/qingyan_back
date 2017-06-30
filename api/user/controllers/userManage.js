@@ -60,7 +60,7 @@ exports.postSMSCode = (req, res, next) => {
     User
         .findOne({ phone: req.body.phone },(err,user) => {
             if (err){
-                res.json({status: ErrorList.DBError, resule:{err}, msg:'DB error'});
+                res.json({status: ErrorList.ErrorType.DBError, resule:{err}, msg:'DB error'});
             }else if (user){
                 user.verifyCode = [
                     {
@@ -118,7 +118,7 @@ exports.postPhoneSignup = (req, res, next) => {
     const errors = req.validationErrors();
 
     if (errors) {
-        res.json({ status:ErrorList.Error, result:{errors}, msg:''});
+        res.json({ status:ErrorList.ErrorType.Error, result:{errors}, msg:''});
         return;
     }
 
@@ -130,7 +130,7 @@ exports.postPhoneSignup = (req, res, next) => {
     User
         .findOne({phone:req.body.phone},(err,user) => {
             if (err || !user){
-                res.json({status:ErrorList.DBError, result:{err}, msg:'查无此人'});
+                res.json({status:ErrorList.ErrorType.DBError, result:{err}, msg:'查无此人'});
                 return;
             }
             var codeList = user.verifyCode;
@@ -147,17 +147,17 @@ exports.postPhoneSignup = (req, res, next) => {
             }
             console.log('create date %s, sms code %s',createDate,smsCode);
             if (createDate === undefined || smsCode === undefined ) {
-                res.json({status: ErrorList.Error,result: {},msg: '验证码类型错误'});
+                res.json({status: ErrorList.ErrorType.Error,result: {},msg: '验证码类型错误'});
                 return
             }
             //十五分钟内有效
             if (smsCode !== req.body.code) {
-                res.json({status: ErrorList.Error, result:{}, msg:'验证码有误'});
+                res.json({status: ErrorList.ErrorType.Error, result:{}, msg:'验证码有误'});
                 return;
             }
 
             if (createDate.getTime() + 1000 * 60 * 15 < Date.now()) {
-                res.json({status: ErrorList.Error, result:{}, msg:'验证码超时'});
+                res.json({status: ErrorList.ErrorType.Error, result:{}, msg:'验证码超时'});
                 return;
             }
 
@@ -166,11 +166,11 @@ exports.postPhoneSignup = (req, res, next) => {
             user
                 .save((err) => {
                     if (err) {
-                        res.json({status:ErrorList.DBError,result:{err}, msg:''});
+                        res.json({status:ErrorList.ErrorType.DBError,result:{err}, msg:''});
                         return
                     }
                     let token = jwt.sign({msg:req.body.phone}, process.env.TOKEN_SECRET, {expiresIn : '7 days'});
-                    res.json({status: ErrorList.Success, result:{token:token}, msg:'注册成功'});
+                    res.json({status: ErrorList.ErrorType.Success, result:{token:token}, msg:'注册成功'});
                 });
         });
 
@@ -212,16 +212,22 @@ exports.postResetPwd = (req, res, next) => {
             .findOne({phone:req.body.phone})
             .then((user) => {
                 if (!user){
-                    res.json({status: ErrorList.DBError, result:{err}, msg:"查无此人"});
+                    res.json({status: ErrorList.ErrorType.DBError, result:{err}, msg:"查无此人"});
                 }
-                user.password = req.body.password;
-                return user.save().then((user) => new Promise((resolve, reject) => {
-                    if (!user){
-                        reject(err);
-                    }else {
-                        resolve();
+                jwt.verify(req.body.token, process.env.TOKEN_SECRET, (err, decode) => {
+                    if (decode.msg == req.body.phone && req.body.token == user.token) {
+                        user.password = req.body.password;
+                        return user.save().then((user) => new Promise((resolve, reject) => {
+                            if (!user){
+                                reject(err);
+                            }else {
+                                resolve();
+                            }
+                        }));
                     }
-                }));
+                    reject({err:'token 失效,请重新登录'});
+                });
+
             })
             .catch((err) => next(err))
     };
@@ -243,31 +249,48 @@ exports.postResetPwd = (req, res, next) => {
  * @param req
  * @param res
  */
-exports.postPhoneLogin = (req, res) => {
+exports.postPhoneLogin = (req, res, next) => {
     if (!SwallowUtil.verifyPhoneNumber(req.body.phone)){
-        res.json({status: 0,result:{}, msg:'手机号码有误' });
+        res.json({status: ErrorList.ErrorType.Error,result:{}, msg:'手机号码有误' });
         return
     }
 
-    User
-        .findOne({phone: req.body.phone},(error,user) => {
-            if (error){
-                res.json({status: ErrorList.DBError, result:{error}, msg:'DB error'});
-                return;
-            }
-            if (!user){
-                res.json({status: ErrorList.Error, result:{error}, msg:'查无此人'})
-            }else {
-                user.comparePassword(req.body.password,(err,isMatch) => {
-                    if (isMatch){
-                        const token = SwallowUtil.genToken(req.body.phone);
-                        res.json({status: ErrorList.Success, result:{token: token}, msg:'用户登录成功'});
-                        return
+    const findUser = () => new Promise ((resolve, reject) => {
+        return User
+            .findOne({phone: req.body.phone})
+            .then((user) => {
+                user.comparePassword(req.body.password, (error, isMatch) => {
+                    if (!isMatch){
+                        reject(error);
                     }
-                    res.json({status: ErrorList.Error, result:{err}, msg:'DB error'});
+                    resolve(user);
                 })
+            });
+    });
+
+    const saveUser = (user) => {
+        const token = SwallowUtil.genToken(user.phone);
+        user.token = token;
+        return user
+            .save()
+            .then((user) => new Promise((resolve, reject) => {
+                if (!user){
+                    reject();
+                }
+                resolve({token: user.token});
+            }))
+
+    };
+    findUser()
+        .then(saveUser)
+        .then((obj) => {
+            if (obj !== undefined) {
+                res.json({status:ErrorList.ErrorType.Success, result:{obj}, msg:'登录成功'});
+            }else {
+                res.json({status:ErrorList.ErrorType.Error, result:{obj}, msg:"登录失败"})
             }
         })
+        .catch((err) => next())
 };
 
 /**

@@ -29,7 +29,7 @@ var MdseInfoSchema = new Schema({
         ]
     },
     mdse_parameters: {
-        brand: String,
+        brand: String,//品牌
     },
     mdse_comments: {
         type: [

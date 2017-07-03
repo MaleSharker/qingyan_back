@@ -46,3 +46,24 @@ exports.genToken = (phone) => {
 };
 
 
+/**
+ * 验证码时效检查
+ * @param smsDate
+ * @returns {boolean}
+ */
+exports.validateSMSDate = (smsDate) => {
+    if (smsDate !== undefined && (smsDate instanceof Date)){
+        const fromDate = Math.floor((new Date(smsDate.toLocaleString())).getTime() / 1000 );
+        const toDate = Math.floor(Date.now() / 1000);
+        if (fromDate + 15 * 60 >= toDate){
+            return true;
+        }else {
+            return false;
+        }
+    }else {
+        return false;
+    }
+};
+
+
+

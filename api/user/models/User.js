@@ -12,14 +12,11 @@ const userSchema = new Schema({
     phone: { type: String, unique: true ,default:""},
     email: { type: String, default:""},
     password: String,
-    passwordResetToken: String,
-    passwordResetExpires: { type:Date, default:Date.now() },
 
     wechat: { type: String, default: ""},
     sina: { type: String,  default:"" },
     facebook: { type: String, default:"" },
     github: { type: String, default:"" },
-    steam: String,
     token: { type:String, default:""},
     verifyCode: {
         type: [
@@ -37,10 +34,11 @@ const userSchema = new Schema({
 
     profile: {
         name: { type:String, default:'Coder' },
+        age: { type:String, default:"0"},
         gender: { type:String, enum:["Male","Female","Martian"], default:"Martian" },
         location: { type:String, default: "Mars" },
         website: { type:String, default:"https://www.baidu.com"},
-        picture: { type:String, default:"" }
+        picture: { type:String, default:"" },
     }
 
 },{ timeStamps: true});

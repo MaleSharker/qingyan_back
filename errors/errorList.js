@@ -2,7 +2,7 @@
  * Created by cc on 17/6/29.
  */
 
-exports.ErrorType = {
+const ErrorType = {
     Success: 1,
     Error: 0,
     DBError: -2,
@@ -10,6 +10,8 @@ exports.ErrorType = {
     TokenRejected: -1001,
     PasswordErr: -1002,
 };
+
+exports.ErrorType = ErrorType;
 
 exports.RegisterVerifyCodeSuccess = (success) => {
     return {

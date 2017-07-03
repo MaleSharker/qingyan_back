@@ -16,6 +16,7 @@ const flash = require('express-flash');
 const path = require('path');
 const mongoose = require('mongoose');
 const passport = require('passport');
+const fileUpload = require('express-fileupload');
 const expressValidator = require('express-validator');
 const expressStatusMonitor = require('express-status-monitor');
 const sass = require('node-sass-middleware');
@@ -73,6 +74,7 @@ app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(expressValidator());
+app.use(fileUpload());
 // app.use(session({
 //     resave:true,
 //     saveUninitialized: true,
@@ -113,13 +115,15 @@ app.use((req, res, next) => {
 //     }
 //     next();
 // });
-app.use(express.static(path.join(__dirname, 'public'), { maxAge: 31557600000 }));
+app.use(express.static(path.join(__dirname, 'uploads'), { maxAge: 31557600000 }));
 
 productRoutes(app);
 userRoutes(app);
 
 app.use((req, res) => {
-    res.status(404).send({url:req.originalUrl + ' not found'});
+    if (!res.finished){
+        res.status(404).send({url:req.originalUrl + ' not found'});
+    }
 });
 
 app.use(errorHandler());

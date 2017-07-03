@@ -34,46 +34,21 @@ module.exports = function (app) {
         .post(userManage.postPhoneLogin);
 
     /**
-     * 创建用户 (邮箱)
+     * 用户验证码登录 (Phone && SMS)
      */
-    app.route('/client/v1/user/emailSignup')
-        .post(userManage.postEmailSignup);
+    app.route('/client/v1/user/smsCodeLogin')
+        .post(userManage.postSMSCodeLogin);
 
     /**
-     * 用户邮箱登录
-     */
-    app.route('/client/v1/user/emailLogin')
-        .post(userManage.postEmailLogin);
-
-    /**
-     * 用户登出
-     */
-    app.route('/client/v1/user/logout')
-        .post(userManage.logout);
-
-    /**
-     * 忘记密码 (邮箱)
-     */
-    app.route('/client/v1/user/emailForgot')
-        .get(userManage.getForgot)
-        .post(userManage.postForgot);
-
-    /**
-     * 重设密码 (邮箱)
-     */
-    app.route('/client/v1/user/emailResetPwd')
-        .get(userManage.getReset)
-        .post(userManage.postReset);
-
-    /**
-     * 更新用户信息
+     * 更改用户信息
      */
     app.route('/client/v1/user/updateProfile')
         .post(userManage.postUpdateProfile);
 
     /**
-     * 更新用户密码
+     * 上传头像
      */
-    app.route('/client/v1/user/updatePwd')
-        .post(userManage.postUpdatePassword);
+    app.route('/client/v1/user/uploadHeadImg')
+        .post(userManage.postUploadImg);
+
 };

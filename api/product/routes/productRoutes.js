@@ -5,13 +5,11 @@
 module.exports = function (app) {
     var searchMdseInfoList = require('../controllers/searchMdseInfoList');
 
-    console.log('request comming - - ');
-
     /**
      * 添加商品分类,分类确认后关闭
      */
-    // app.route('/mgmt/v1/product/createMdseCategory')
-    //     .post(searchMdseInfoList.setMdseCategorys);
+    app.route('/mgmt/v1/product/createMdseCategory')
+        .post(searchMdseInfoList.postMdseCategorys);
 
     /**
      * 商品列表

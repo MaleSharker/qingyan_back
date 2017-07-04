@@ -7,6 +7,7 @@ const crypto = bluebird.promisifyAll(require('crypto'));
 const nodemailer = require('nodemailer');
 const passport = require('passport');
 const cryptiler = require('cryptiles');
+const ErrorList = require(global.apiPathPrefix + '/errors/errorList');
 
 /**
  * models
@@ -18,23 +19,49 @@ const MdseInfo = require('../models/mdseinfomodel');
 /**
  * Set mdse category list
  */
-exports.setMdseCategorys = (req, res) => {
-    const list = req.body.category_list;
-    var mdseCategory = new MdseCategory();
-    var index = 0;
-    for (index;index < list.length; index ++){
-        mdseCategory.category_list[index] = {
-            name: list[index].name,
-            id: cryptiler.randomString(10)
-        };
-    }
-    mdseCategory.save((err, task) => {
-        if (err){
-            res.send(err);
-        }else {
-            res.json(task);
-        }
+exports.postMdseCategorys = (req, res, next) => {
+
+    let dbFind = () => new Promise((resolve, reject) => {
+        MdseCategory
+            .find()
+            .exec((error, docs) => {
+                if (error) {
+                    reject({error:error});
+                }else {
+                    resolve(docs);
+                }
+            })
+            .catch((error) => {
+                reject({error:error});
+            })
     });
+    dbFind()
+        .then((docs) => {
+            const category = new MdseCategory(req.body.category);
+            return new Promise((resolve, reject) => {
+                category
+                    .save()
+                    .then((category) => {
+                        if (category){
+                            resolve()
+                        }else {
+                            reject();
+                        }
+                    })
+                    .catch((error) => {
+                        reject({error:error});
+                    })
+            })
+
+        })
+        .then(() => {
+            if (!res.finished){
+                res.json({status: ErrorList.ErrorType.Success, result:{}, msg:''});
+            }
+        })
+        .catch((err) => {
+            next(err)
+        })
 };
 
 /**

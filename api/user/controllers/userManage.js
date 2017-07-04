@@ -65,73 +65,80 @@ exports.postSMSCode = (req, res, next) => {
         })
     };
 
-
-    User
-        .findOne({ phone: req.body.phone },(err,user) => {
-            if (err){
-                res.json({status: ErrorList.ErrorType.DBError, resule:{err}, msg:'DB error'});
-            }else if (user){
-                var isFind = false;
-                var item = 0;
-                for (item; item < user.verifyCode.length; item++){
-                    const tempItem = user.verifyCode[item];
-                    console.log("%s - - %s",tempItem.codeType,req.body.smsType);
-                    if (tempItem.codeType == req.body.smsType){
-                        tempItem.code = verifyCode;
-                        tempItem.createDate = new Date();
-                        isFind = true;
-                    }
-                }
-                if (!isFind) {
-                    user.verifyCode.push({
-                        code: verifyCode,
-                        codeType: req.body.smsType
-                    });
-                }
-                user
-                    .save((err) => {
-                        if (err) {
-                            res.json({ status: 0, result:{err}, msg:'User save error' });
-                            return;
+    User.count({}, (err, count) => {
+        if (err) {
+            res.json({status:ErrorList.ErrorType.DBError, result:{}, msg:'数据库查询错误'});
+            return;
+        }
+        User
+            .findOne({ phone: req.body.phone },(err,user) => {
+                if (err){
+                    res.json({status: ErrorList.ErrorType.DBError, resule:{err}, msg:'DB error'});
+                }else if (user){
+                    var isFind = false;
+                    var item = 0;
+                    for (item; item < user.verifyCode.length; item++){
+                        const tempItem = user.verifyCode[item];
+                        console.log("%s - - %s",tempItem.codeType,req.body.smsType);
+                        if (tempItem.codeType == req.body.smsType){
+                            tempItem.code = verifyCode;
+                            tempItem.createDate = new Date();
+                            isFind = true;
                         }
-                        request(options,(err,request,body) => {
-                            if (err) {
-                                res.json(ErrorList.RegisterVerifyCodeFailed(err));
-                            }else if (request.statusCode == 200){
-                                res.json(ErrorList.RegisterVerifyCodeSuccess({err:'NO Error'}));
-                            }else {
-                                res.json(ErrorList.RegisterVerifyCodeSuccess(body));
-                            }
-                        });
-                    });
-            }else {
-                const newUser = new User({
-                    phone: req.body.phone,
-                    verifyCode: [
-                        {
+                    }
+                    if (!isFind) {
+                        user.verifyCode.push({
                             code: verifyCode,
                             codeType: req.body.smsType
-                        }
-                    ]
-                });
-                newUser
-                    .save((err) => {
-                        if (err) {
-                            res.json({ status: 0, result:{err}, msg:'User save error' });
-                            return;
-                        }
-                        request(options,(err,request,body) => {
-                            if (err) {
-                                res.json(ErrorList.RegisterVerifyCodeFailed(err));
-                            }else if (request.statusCode == 200){
-                                res.json(ErrorList.RegisterVerifyCodeSuccess(body));
-                            }else {
-                                res.json(ErrorList.RegisterVerifyCodeSuccess(body));
-                            }
                         });
+                    }
+                    user
+                        .save((err) => {
+                            if (err) {
+                                res.json({ status: 0, result:{err}, msg:'User save error' });
+                                return;
+                            }
+                            request(options,(err,request,body) => {
+                                if (err) {
+                                    res.json(ErrorList.RegisterVerifyCodeFailed(err));
+                                }else if (request.statusCode == 200){
+                                    res.json(ErrorList.RegisterVerifyCodeSuccess({err:'NO Error'}));
+                                }else {
+                                    res.json(ErrorList.RegisterVerifyCodeSuccess(body));
+                                }
+                            });
+                        });
+                }else {
+                    const newUser = new User({
+                        phone: req.body.phone,
+                        verifyCode: [
+                            {
+                                code: verifyCode,
+                                codeType: req.body.smsType
+                            }
+                        ],
+                        userID:count + 1
                     });
-            }
-        });
+                    newUser
+                        .save((err) => {
+                            if (err) {
+                                res.json({ status: 0, result:{err}, msg:'User save error' });
+                                return;
+                            }
+                            request(options,(err,request,body) => {
+                                if (err) {
+                                    res.json(ErrorList.RegisterVerifyCodeFailed(err));
+                                }else if (request.statusCode == 200){
+                                    res.json(ErrorList.RegisterVerifyCodeSuccess(body));
+                                }else {
+                                    res.json(ErrorList.RegisterVerifyCodeSuccess(body));
+                                }
+                            });
+                        });
+                }
+            });
+    });
+
 };
 
 /**
@@ -156,6 +163,7 @@ exports.postPhoneSignup = (req, res, next) => {
         return;
     }
 
+
     User
         .findOne({phone:req.body.phone},(err,user) => {
             if (err || !user){
@@ -174,7 +182,6 @@ exports.postPhoneSignup = (req, res, next) => {
                     break;
                 }
             }
-            console.log('create date %s, sms code %s',createDate,smsCode);
             if (createDate === undefined || smsCode === undefined ) {
                 res.json({status: ErrorList.ErrorType.Error,result: {},msg: '验证码类型错误'});
                 return
@@ -190,15 +197,16 @@ exports.postPhoneSignup = (req, res, next) => {
                 return;
             }
 
+            let token = SwallowUtil.genToken(req.body.phone);
             codeList.splice(index,1);
             user.verifyCode = codeList;
+            user.token = token;
             user
                 .save((err) => {
                     if (err) {
                         res.json({status:ErrorList.ErrorType.DBError,result:{err}, msg:''});
                         return
                     }
-                    let token = jwt.sign({msg:req.body.phone}, process.env.TOKEN_SECRET, {expiresIn : '7 days'});
                     res.json({status: ErrorList.ErrorType.Success, result:{token:token}, msg:'注册成功'});
                 });
         });

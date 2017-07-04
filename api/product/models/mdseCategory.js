@@ -1,5 +1,10 @@
 /**
  * Created by cc on 17/6/27.
+ * 系统商品类别索引设置
+ * 00 - 父类
+ * 父类 - 000 - 类
+ * 类   - 0000 - 子类
+ *
  */
 
 const mongoose = require('mongoose');

@@ -13,6 +13,17 @@ const userSchema = new Schema({
     email: { type: String, default:""},
     password: String,
 
+    tenantID: {
+        type:Number,
+        unique:true
+    },
+
+    userID:{
+        type: Number,
+        unique: true,
+        required: true
+    },
+
     wechat: { type: String, default: ""},
     sina: { type: String,  default:"" },
     facebook: { type: String, default:"" },

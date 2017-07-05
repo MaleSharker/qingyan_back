@@ -471,6 +471,12 @@ exports.postUpdateProfile = (req, res, next) => {
 
 };
 
+/**
+ * 用户上传头像
+ * @param req
+ * @param res
+ * @param next
+ */
 
 exports.postUploadImg = (req, res, next) => {
     if (!req.files){
@@ -496,7 +502,6 @@ exports.postUploadImg = (req, res, next) => {
             })
         }))
         .then(() => new Promise((resolve, reject) => {
-            console.log("- - - - 1");
             User
                 .findOne({phone:req.headers.phone})
                 .then((user) => {

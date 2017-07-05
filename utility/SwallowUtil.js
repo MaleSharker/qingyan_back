@@ -4,16 +4,19 @@
 
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
+const User = require(global.apiPathPrefix + '/api/user/models/User');
 
 /**
  * 手机号码校验
  * @param phoneNumber
  * @returns {boolean}
  */
-exports.verifyPhoneNumber = (phoneNumber) => {
+const verifyPhoneNumber = (phoneNumber) => {
     const regexp = /^0?(13[0-9]|15[012356789]|18[02356789]|14[57])[0-9]{8}$/;
     return regexp.test(phoneNumber);
 };
+
+exports.verifyPhoneNumber = verifyPhoneNumber;
 
 /**
  * 短信验证码生成
@@ -44,6 +47,36 @@ exports.md5Encode = (original) => {
 exports.genToken = (phone) => {
     return jwt.sign({msg:phone}, process.env.TOKEN_SECRET, {expiresIn : '7 days'});
 };
+
+/**
+ * 验证用户身份
+ * @param phone
+ * @param token
+ */
+exports.validateUser = (phone, token) => new Promise((resolve, reject) => {
+    if (verifyPhoneNumber(phone)){
+        User
+            .findOne({phone:phone})
+            .then((user) => {
+                if (token == user.token){
+                    jwt.verify(token,process.env.TOKEN_SECRET, (error, decode) => {
+                        if (decode && decode.msg == phone){
+                            resolve();
+                        }else{
+                            reject({error:'Token 验证错误'})
+                        }
+                    });
+                }else {
+                    reject({error:'Token 失效'});
+                }
+            })
+            .catch((error) => {
+                reject(error);
+            })
+    }else {
+        reject({error:'token 错误'})
+    }
+});
 
 
 /**

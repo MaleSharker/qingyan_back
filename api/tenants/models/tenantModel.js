@@ -11,7 +11,7 @@ const tenantModel = new Schema({
     name:{
         type:String,
         Required: 'You have to make a name to your Tenant.',
-        unique:true
+        unique:true,
     },
     tenantID:{
         type:Number,
@@ -50,6 +50,16 @@ const tenantModel = new Schema({
 
 },{timeStamps: true,collection:"tenant_list"});
 
+tenantModel.pre('save',function save(next, done) {
+    const tenant = this;
+    if (!tenant.isModified('name')){ return next()}
+    console.log("length - %s",tenant.name.length);
+    if (tenant.name.length <= 2){
+        return done({error:'商铺名称太短'})
+    }else{
+        next()
+    }
+});
 
 
 module.exports = mongoose.model('TenantModel',tenantModel);

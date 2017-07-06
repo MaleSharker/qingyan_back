@@ -35,8 +35,9 @@ module.exports = function tenantRoutes(app) {
      */
     app.route('/mgmt/v1/tenant/uploadTenantImage')
         .post(tenantController.postUploadTenantImage);
-    // app.post('/mgmt/v1/tenant/uploadTenantImage', upload.single('imageFile'), (req, res, next) => {
-    //
-    // });
+
+    /**
+     * 店铺创建商品品牌
+     */
 };
 

@@ -45,7 +45,11 @@ const tenantModel = new Schema({
                 unique: true
             }
         }
-    ]
+    ],
+    brandList:[{
+        type: Schema.Types.ObjectId,
+        ref: 'MdseBrand'
+    }]
 
 
 },{timeStamps: true,collection:"tenant_list"});

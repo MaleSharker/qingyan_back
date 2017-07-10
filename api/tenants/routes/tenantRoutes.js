@@ -4,9 +4,7 @@
 
 const path = require('path');
 const tenantController = require('../controllers/tenantManageController');
-// const multipart = require('connect-multiparty');
-// const multer = require('multer');
-// const upload = multer({dest: 'uploads/'});
+const brandController = require('../controllers/brandManageController');
 
 module.exports = function tenantRoutes(app) {
 
@@ -39,5 +37,9 @@ module.exports = function tenantRoutes(app) {
     /**
      * 店铺创建商品品牌
      */
+    app.route('/mgmt/v1/tenant/tenantCreateBrand')
+        .post(brandController.postTenantCreateBrand);
+
+
 };
 

@@ -38,14 +38,7 @@ const tenantModel = new Schema({
         enum:['open','close'],
         default: 'open'
     },
-    spuList:[
-        {
-            spuID:{
-                type: String,
-                unique: true
-            }
-        }
-    ],
+
     brandList:[{
         type: Schema.Types.ObjectId,
         ref: 'MdseBrand'

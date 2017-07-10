@@ -7,7 +7,7 @@ const bluebird = require('bluebird');
 const crypto = bluebird.promisifyAll(require('crypto'));
 const ErrorList = require(global.apiPathPrefix + '/errors/errorList');
 const SwallowUtil = require(global.apiPathPrefix + '/utility/SwallowUtil');
-const fileUpload = require('express-fileupload');
+
 
 const Tenant = require('../models/tenantModel');
 const User = require(global.apiPathPrefix + '/api/user/models/User');

@@ -22,7 +22,7 @@ const expressStatusMonitor = require('express-status-monitor');
 const sass = require('node-sass-middleware');
 const multer = require('multer');
 const upload = multer({ dest: path.join(__dirname, 'uploads')});
-
+const Sequelize = require('sequelize');
 /**
  * load environment variables
  */
@@ -58,6 +58,32 @@ mongoose.connection.on('error', (err) => {
     console.log('%s MongoDB connection error. Please make sure MongoDB is running.',chalk.red('✗'))
     progress.exit();
 });
+
+/**
+ * Connect to mysql
+ */
+const sequelize = new Sequelize('qingyan_mysql','ccbai','bai117570',{
+    host:'127.0.0.1',
+    dialect:'mysql',
+
+    pool:{
+        max: 5,
+        min: 0,
+        idle: 10000
+    }
+});
+// const sequelize = new Sequelize(process.env.MySQL_URI);
+sequelize
+    .authenticate()
+    .then( () => {
+        console.log('%s Connection has been established successfully.', chalk.green('v'));
+    })
+    .catch((error) => {
+        console.log(error);
+        console.log('%s MySQL connection error. Please make sure MySQL server is running.',chalk.red('✗'));
+        process.exit();
+    });
+
 
 /**
  * Express configuration

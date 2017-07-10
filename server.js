@@ -7,22 +7,22 @@ const compression = require('compression');
 // const session = require('express-session');
 const bodyParser = require('body-parser');
 const logger = require('morgan');
-const chalk = require('chalk');
 const errorHandler = require('errorhandler');
 const lusca = require('lusca');
 const dotenv = require('dotenv');
 // const MongoStore = require('connect-mongo')(session);
 const flash = require('express-flash');
 const path = require('path');
-const mongoose = require('mongoose');
+const chalk = require('chalk');
 const passport = require('passport');
 const fileUpload = require('express-fileupload');
 const expressValidator = require('express-validator');
 const expressStatusMonitor = require('express-status-monitor');
 const sass = require('node-sass-middleware');
 const multer = require('multer');
+const DBConfig = require('./utility/DBConfig');
 const upload = multer({ dest: path.join(__dirname, 'uploads')});
-const Sequelize = require('sequelize');
+
 /**
  * load environment variables
  */
@@ -51,39 +51,12 @@ const app = express();
 /**
  * Connect to MongoDB
  */
-mongoose.Promise = global.Promise;
-mongoose.connect(process.env.MONGODB_URI || process.env.MONGOLAB_URI);
-mongoose.connection.on('error', (err) => {
-    console.log(err);
-    console.log('%s MongoDB connection error. Please make sure MongoDB is running.',chalk.red('✗'))
-    progress.exit();
-});
+DBConfig.configMongoose();
 
 /**
- * Connect to mysql
+ * Connect to MySQL and Config Schema
  */
-const sequelize = new Sequelize('qingyan_mysql','ccbai','bai117570',{
-    host:'127.0.0.1',
-    dialect:'mysql',
-
-    pool:{
-        max: 5,
-        min: 0,
-        idle: 10000
-    }
-});
-// const sequelize = new Sequelize(process.env.MySQL_URI);
-sequelize
-    .authenticate()
-    .then( () => {
-        console.log('%s Connection has been established successfully.', chalk.green('v'));
-    })
-    .catch((error) => {
-        console.log(error);
-        console.log('%s MySQL connection error. Please make sure MySQL server is running.',chalk.red('✗'));
-        process.exit();
-    });
-
+DBConfig.configMysql();
 
 /**
  * Express configuration

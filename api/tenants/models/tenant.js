@@ -20,31 +20,28 @@ const tenant = (sequelize, DataTypes) => {
         tenantID:{
             type:DataTypes.INTEGER,
             unique:true,
-            allowNull: false
+            allowNull: false,
         },
         ownerID:{
             type:DataTypes.INTEGER,
             unique: true,
             allowNull:false
         },
-        // tenantDesc:{
-        //     descText:{
-        //         type:DataTypes.TEXT,
-        //         // defaultValue:''
-        //     },
-        //     descUrl:{
-        //         type:DataTypes.STRING,
-        //         // defaultValue:''
-        //     }
-        // },
+        descText:{
+            type:DataTypes.TEXT,
+        },
+        descUrl:{
+            type:DataTypes.STRING,
+            defaultValue:''
+        },
         status:{
             type:DataTypes.ENUM,
             values:['open','close'],
-            // defaultValue: 'open'
+            defaultValue: 'open',
+            allowNull: false
         }
     },{
         timestamps: true,
-        paranoid: false,
         freezeTableName: true,
         tableName: 'tenant_list'
     });

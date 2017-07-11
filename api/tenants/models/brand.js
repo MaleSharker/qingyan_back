@@ -9,13 +9,13 @@ const brand = (sequelite, DataTypes) => {
 
         name:{
             type:DataTypes.STRING,
-            // set:function (val) {
-            //     if (val.length < 1){
-            //         throw new Error;
-            //     }else {
-            //         this.setDataValue('name', val);
-            //     }
-            // }
+            set:function (val) {
+                if (val.length < 1){
+                    throw new Error;
+                }else {
+                    this.setDataValue('name', val);
+                }
+            }
         },
 
         description:{
@@ -28,7 +28,6 @@ const brand = (sequelite, DataTypes) => {
 
     },{
         timestamps: true,
-        paranoid: false,
         freezeTableName: true,
         tableName: 'brand_list'
     });

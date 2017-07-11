@@ -55,6 +55,6 @@ exports.configMysql = () => {
     Tenant.hasMany(Brand);
 
 
-    Tenant.sync();
-    Brand.sync();
+    Tenant.sync({force:true});
+    Brand.sync({force: true});
 };

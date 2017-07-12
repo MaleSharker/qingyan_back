@@ -4,12 +4,13 @@
 
 module.exports = function (app) {
     var searchMdseInfoList = require('../controllers/searchMdseInfoList');
-
+    var categoryManager = require('../controllers/categoryManage');
     /**
      * 添加商品分类,分类确认后关闭
      */
     app.route('/mgmt/v1/product/createMdseCategory')
-        .post(searchMdseInfoList.postMdseCategorys);
+        .post(categoryManager.postAddCategory);
+        // .post(searchMdseInfoList.postMdseCategorys);
 
     /**
      * 商品列表

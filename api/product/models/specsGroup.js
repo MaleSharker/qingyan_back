@@ -9,7 +9,6 @@ const specsGroup = (sequelize, DataTypes) => {
         group_id: {
             type: DataTypes.INTEGER,
             primaryKey: true,
-            allowNull: true,
             autoIncrement: true
         },
         name: {
@@ -19,7 +18,7 @@ const specsGroup = (sequelize, DataTypes) => {
     },{
         timestamps: false,
         freezeTableName: true,
-        tableName: 'category_list'
+        tableName: 'specs_group_list'
     });
 
     return SpecsGroup;

@@ -5,6 +5,7 @@ const chalk = require('chalk');
 const Sequelize = require('sequelize');
 const mongoose = require('mongoose');
 
+var sequelize;
 
 exports.configMongoose = () => {
     mongoose.Promise = global.Promise;
@@ -21,8 +22,8 @@ exports.configMysql = () => {
     /**
      * Connect to mysql
      */
-    const sequelize = new Sequelize('qingyan_mysql','ccbai','bai117570',{
-        host:'192.168.1.109',
+    sequelize = new Sequelize('qingyan_mysql','ccbai','bai117570',{
+        host:'192.168.0.157',
         dialect:'mysql',
 
         pool:{
@@ -72,35 +73,209 @@ exports.configMysql = () => {
     const AttriRelation = sequelize.import(global.apiPathPrefix + '/api/product/models/attriRelation');
 
 
-    // Brand.belongsTo(Tenant);
-    Tenant.hasMany(Brand);
-    Brand.hasMany(SPU);
-    Category.hasMany(SPU);
-    Category.hasMany(Specs);
+    Category.sync();
+    Category.hasMany(SPU,{
+        foreignKey: 'category_id',
+        target: 'category_id'
+    });
 
-    SpecsGroup.hasMany(Specs);
-    Specs.hasMany(SpecsChoice);
-    SpecsRelation.hasMany(SpecsChoice);
+    Tenant.sync();
+    Tenant.hasMany(Brand, {
+        as: 'tenant',
+        foreignKey: 'tenant_id',
+        target: 'tenant_id'
+    });
 
-    SPU.hasMany(SKU);
+    Brand.sync();
+    Brand.hasMany(SPU, {
+        as:'brand',
+        foreignKey:'brand_id',
+        target:'brand_id'
+    });
 
-    SKU.hasOne(AttriRelation);
-    SKU.hasOne(SpecsRelation);
+    SPU.sync();
+    SPU.hasMany(SKU,{
+        as: 'spu',
+        foreignKey: 'spu_id',
+        target: 'spu_id'
+    });
 
-    Attribute.hasMany(AttriChoice);
-    AttriRelation.hasMany(AttriChoice);
+    SKU.sync();
+    /* - - - - - */
+    SKU.hasOne(SpecsRelation, {
+        foreignKey: 'sku_id',
+        target: 'sku_id'
+    });
+
+    SpecsGroup.sync();
+    SpecsGroup.hasMany(Specs,{
+        as:'specsgroup',
+        foreignKey: 'group_id',
+        target: 'group_id'
+    });
+
+    Category.hasMany(Specs,{
+        foreignKey: 'category_id',
+        target: 'category_id'
+    });
+
+    Specs.sync();
+    Specs.hasMany(SpecsChoice, {
+        as: 'specs',
+        foreignKey: 'specs_id',
+        target: 'specs_id'
+    });
+
+    SpecsChoice.sync();
+    SpecsChoice.hasOne(SpecsRelation,{
+        foreignKey: 'specs_choice_id',
+        target: 'choice_id'
+    });
+
+    SpecsRelation.sync();
+    /* - - - - - - */
 
 
-    Tenant.sync({force: true});
-    Brand.sync({force: true});
-    Category.sync({force: true});
-    Specs.sync({force: true});
-    SpecsGroup.sync({force: true});
-    SpecsChoice.sync({force: true});
-    SpecsRelation.sync({force: true});
-    SPU.sync({force: true});
-    SKU.sync({force: true});
-    Attribute.sync({force: true});
-    AttriChoice.sync({force: true});
-    AttriRelation.sync({force: true});
+    Attribute.sync();
+    AttriChoice.hasMany(Attribute, {
+        as:'attrichoice',
+        foreignKey:'attrichoice_id',
+        target: 'choice_id'
+    });
+    AttriChoice.sync();
+
+    AttriRelation.hasOne(AttriChoice, {
+        as: 'attriRelation',
+        foreignKey: 'attri_relation_id',
+        target: 'attri_relation_id'
+    });
+    AttriRelation.hasOne(SKU, {
+        foreignKey: 'sku_id',
+        target: 'sku_id'
+    });
+
+    AttriRelation.sync();
+
+    // SKU.drop();
+    // SPU.drop();
+    // Brand.drop();
+    // Tenant.drop();
+    // Category.drop();
+    // Specs.drop();
+    // SpecsChoice.drop();
+    // SpecsGroup.drop();
+    // SpecsRelation.drop();
+    // Attribute.drop();
+    // AttriChoice.drop();
+    // AttriRelation.drop();
+
+};
+
+
+/**
+ * 商铺模型
+ * @returns {Model}
+ * @constructor
+ */
+exports.Tenant = () => {
+    return sequelize.import(global.apiPathPrefix + '/api/tenants/models/tenant');
+};
+
+/**
+ * 品牌
+ * @returns {Model}
+ * @constructor
+ */
+exports.Brand = () => {
+    return sequelize.import(global.apiPathPrefix + '/api/tenants/models/brand');
+};
+
+/**
+ * 分类
+ * @returns {Model}
+ * @constructor
+ */
+exports.Category = () => {
+    return sequelize.import(global.apiPathPrefix + '/api/product/models/category');
+};
+
+/**
+ * 规格
+ * @returns {Model}
+ * @constructor
+ */
+exports.Specs = () => {
+    return sequelize.import(global.apiPathPrefix + '/api/product/models/specs');
+};
+
+/**
+ * 规格组
+ * @returns {Model}
+ * @constructor
+ */
+exports.SpecsGroup = () => {
+    return sequelize.import(global.apiPathPrefix + '/api/product/models/specsGroup');
+};
+
+/**
+ * 规格选项
+ * @returns {Model}
+ * @constructor
+ */
+exports.SpecsChoice = () => {
+    return sequelize.import(global.apiPathPrefix + '/api/product/models/specsChoice');
+};
+
+/**
+ * 规格关系
+ * @returns {Model}
+ * @constructor
+ */
+exports.SpecsRelation = () => {
+    return sequelize.import(global.apiPathPrefix + '/api/product/models/specsRelation');
+};
+
+/**
+ * Standard Production Unit
+ * @returns {Model}
+ * @constructor
+ */
+exports.SPU = () => {
+    return sequelize.import(global.apiPathPrefix + '/api/product/models/spu');
+};
+
+/**
+ * Stock Keeping Unit
+ * @returns {Model}
+ * @constructor
+ */
+exports.SKU = () => {
+    return sequelize.import(global.apiPathPrefix + '/api/product/models/sku');
+};
+
+/**
+ * 属性
+ * @returns {Model}
+ * @constructor
+ */
+exports.Attribute = () => {
+    return sequelize.import(global.apiPathPrefix + '/api/product/models/attribute');
+};
+
+/**
+ * 属性选项
+ * @returns {Model}
+ * @constructor
+ */
+exports.AttriChoice = () => {
+    return sequelize.import(global.apiPathPrefix + '/api/product/models/attriChoice');
+};
+
+/**
+ * 属性关系
+ * @returns {Model}
+ * @constructor
+ */
+exports.AttriRelation = () => {
+    return sequelize.import(global.apiPathPrefix + '/api/product/models/attriRelation');
 };

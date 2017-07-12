@@ -6,6 +6,12 @@
 const tenant = (sequelize, DataTypes) => {
     const Tenant = sequelize.define('tenant', {
 
+        tenant_id:{
+            type:DataTypes.INTEGER,
+            primaryKey: true,
+            allowNull: true,
+            autoIncrement: true
+        },
         name:{
             type:DataTypes.STRING,
             unique:true,
@@ -16,12 +22,6 @@ const tenant = (sequelize, DataTypes) => {
                     this.setDataValue('name',val);
                 }
             }
-        },
-        tenant_id:{
-            type:DataTypes.INTEGER,
-            primaryKey: true,
-            allowNull: true,
-            autoIncrement: true
         },
         ownerID:{
             type:DataTypes.INTEGER,

@@ -54,6 +54,7 @@ exports.genToken = (phone) => {
  * @param token
  */
 exports.validateUser = (phone, token) => new Promise((resolve, reject) => {
+    console.log('token - %s  phone - - - %s', token, phone);
     if (verifyPhoneNumber(phone)){
         User
             .findOne({phone:phone})

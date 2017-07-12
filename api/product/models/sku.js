@@ -10,7 +10,7 @@ const sku = (sequelize, DataTypes) => {
             type: DataTypes.INTEGER,
             primaryKey: true,
             autoIncrement: true,
-            unique: true
+            allowNull: true,
         },
         ske_encode: {
             type:DataTypes.STRING,
@@ -18,13 +18,12 @@ const sku = (sequelize, DataTypes) => {
         },
         price:{
             type: DataTypes.DECIMAL(5,2),
-            allowNull: false
         }
 
     }, {
         timestamps: false,
         freezeTableName: true,
-        tableName: 'sku'
+        tableName: 'sku_list'
     });
 
     return SKU;

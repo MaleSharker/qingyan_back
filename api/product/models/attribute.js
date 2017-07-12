@@ -8,6 +8,7 @@ const attribute = (sequelize, DataTypes) => {
         attri_id: {
             type:DataTypes.INTEGER,
             primaryKey: true,
+            allowNull: true,
             autoIncrement: true
         },
         name: {

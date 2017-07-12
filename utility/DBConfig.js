@@ -22,7 +22,7 @@ exports.configMysql = () => {
      * Connect to mysql
      */
     const sequelize = new Sequelize('qingyan_mysql','ccbai','bai117570',{
-        host:'192.168.0.157',
+        host:'192.168.1.109',
         dialect:'mysql',
 
         pool:{
@@ -73,19 +73,34 @@ exports.configMysql = () => {
 
 
     // Brand.belongsTo(Tenant);
-    // Tenant.hasMany(Brand);
+    Tenant.hasMany(Brand);
+    Brand.hasMany(SPU);
+    Category.hasMany(SPU);
+    Category.hasMany(Specs);
+
+    SpecsGroup.hasMany(Specs);
+    Specs.hasMany(SpecsChoice);
+    SpecsRelation.hasMany(SpecsChoice);
+
+    SPU.hasMany(SKU);
+
+    SKU.hasOne(AttriRelation);
+    SKU.hasOne(SpecsRelation);
+
+    Attribute.hasMany(AttriChoice);
+    AttriRelation.hasMany(AttriChoice);
 
 
-    Tenant.sync();
-    Brand.sync();
-    Category.sync();
-    Specs.sync();
-    SpecsGroup.sync();
-    SpecsChoice.sync();
-    SpecsRelation.sync();
-    SPU.sync();
-    SKU.sync();
-    Attribute.sync();
-    AttriChoice.sync();
-    AttriRelation.sync();
+    Tenant.sync({force: true});
+    Brand.sync({force: true});
+    Category.sync({force: true});
+    Specs.sync({force: true});
+    SpecsGroup.sync({force: true});
+    SpecsChoice.sync({force: true});
+    SpecsRelation.sync({force: true});
+    SPU.sync({force: true});
+    SKU.sync({force: true});
+    Attribute.sync({force: true});
+    AttriChoice.sync({force: true});
+    AttriRelation.sync({force: true});
 };

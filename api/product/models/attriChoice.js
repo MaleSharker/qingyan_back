@@ -8,6 +8,7 @@ const attriChoice = (sequelize, DataTypes) => {
         choice_id: {
             type: DataTypes.INTEGER,
             primaryKey: true,
+            allowNull: true,
             autoIncrement:true
         },
         value: {

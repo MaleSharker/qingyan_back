@@ -7,6 +7,13 @@ const brand = (sequelite, DataTypes) => {
 
     const Brand = sequelite.define('brand', {
 
+        brand_id: {
+            type: DataTypes.INTEGER,
+            primaryKey: true,
+            autoIncrement: true,
+            allowNull: true,
+        },
+
         name:{
             type:DataTypes.STRING,
             set:function (val) {

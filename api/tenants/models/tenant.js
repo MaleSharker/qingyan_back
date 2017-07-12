@@ -17,10 +17,11 @@ const tenant = (sequelize, DataTypes) => {
                 }
             }
         },
-        tenantID:{
+        tenant_id:{
             type:DataTypes.INTEGER,
-            unique:true,
-            allowNull: false,
+            primaryKey: true,
+            allowNull: true,
+            autoIncrement: true
         },
         ownerID:{
             type:DataTypes.INTEGER,

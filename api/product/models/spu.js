@@ -8,7 +8,8 @@ const spu = (sequelize, DataTypes) => {
         spu_id:{
             type:DataTypes.INTEGER,
             primaryKey: true,
-            allowNull: false
+            autoIncrement: true,
+            allowNull: true,
         },
         name:{
             type:DataTypes.STRING,

@@ -8,7 +8,8 @@ const category = (sequelize, DataTypes) => {
         category_id:{
             type: DataTypes.INTEGER,
             primaryKey: true,
-            allowNull: false
+            autoIncrement: true,
+            allowNull: true,
         },
         name:{
             type: DataTypes.STRING,

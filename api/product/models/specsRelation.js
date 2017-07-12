@@ -6,8 +6,11 @@ const specsRelation = (sequelize, DataTypes) => {
 
     const SpecsRelation = sequelize.define('specsrelation',{
 
-        relationID: {
-            type: DataTypes.INTEGER
+        spec_relation_id: {
+            type: DataTypes.INTEGER,
+            primaryKey: true,
+            autoIncrement: true,
+            allowNull: true,
         }
 
     },{

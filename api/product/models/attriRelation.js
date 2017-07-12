@@ -6,9 +6,10 @@
 const attriRelation = (sequelize, DataTypes) => {
 
     const AttriRelation = sequelize.define('attrirelation', {
-        relation_id: {
+        attri_relation_id: {
             type: DataTypes.INTEGER,
             primaryKey: true,
+            allowNull: true,
             autoIncrement: true
         }
     }, {

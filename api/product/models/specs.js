@@ -8,8 +8,8 @@ const specs = (sequelize, DataTypes) => {
         specs_id: {
             type: DataTypes.INTEGER,
             primaryKey: true,
-            allowNull: false,
-            autoIncrement: true
+            autoIncrement: true,
+            allowNull: true,
         },
         name: {
             type: DataTypes.STRING,

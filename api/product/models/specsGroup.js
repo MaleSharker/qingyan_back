@@ -8,8 +8,9 @@ const specsGroup = (sequelize, DataTypes) => {
 
         group_id: {
             type: DataTypes.INTEGER,
-            allowNull: false,
-            primaryKey: true
+            primaryKey: true,
+            allowNull: true,
+            autoIncrement: true
         },
         name: {
             type: DataTypes.STRING,

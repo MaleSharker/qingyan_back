@@ -9,7 +9,8 @@ const specsChoice = (sequelize, DataTypes) => {
         choice_id: {
             type: DataTypes.INTEGER,
             primaryKey: true,
-            allowNull: false
+            allowNull: true,
+            autoIncrement: true
         },
 
         name: {

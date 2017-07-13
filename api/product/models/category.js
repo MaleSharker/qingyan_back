@@ -13,11 +13,13 @@ const category = (sequelize, DataTypes) => {
         },
         name:{
             type: DataTypes.STRING,
+            unique: true,
             allowNull:false
         },
         category_encode:{
             type:DataTypes.INTEGER,
-            allowNull: false
+            allowNull: true,
+            defaultValue:0
         }
     },{
         timestamps: false,

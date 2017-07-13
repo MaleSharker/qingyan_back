@@ -27,6 +27,14 @@ const spu = (sequelize, DataTypes) => {
         detail:{
             type: DataTypes.TEXT,
             allowNull: true,
+        },
+        status:{
+            type:DataTypes.INTEGER,
+            defaultValue:1,
+            allowNull:false,
+            validate: {
+                isIn: [0,1,2,3]
+            }
         }
     }, {
         timestamps: false,

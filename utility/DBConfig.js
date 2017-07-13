@@ -30,7 +30,8 @@ exports.configMysql = () => {
             max: 5,
             min: 0,
             idle: 10000
-        }
+        },
+        // logging: false  //关闭数据库语句输出
     });
 
     sequelize

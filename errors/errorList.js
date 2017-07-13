@@ -9,6 +9,7 @@ const ErrorType = {
     TokenInvalid: -1000,
     TokenRejected: -1001,
     PasswordErr: -1002,
+    ParameterError: -1003,//参数错误
 };
 
 exports.ErrorType = ErrorType;

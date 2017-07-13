@@ -3,7 +3,7 @@
  */
 
 const path = require('path');
-const tenantController = require('../controllers/tenantManageController');
+const tenantController = require('../controllers/tenantController');
 const brandController = require('../controllers/brandManageController');
 
 module.exports = function tenantRoutes(app) {
@@ -14,19 +14,17 @@ module.exports = function tenantRoutes(app) {
     app.route('/mgmt/v1/tenant/createTenant')
         .post(tenantController.postCreateTenant);
 
-
     /**
-     * 修改店铺状态
+     * 查询店铺信息
      */
-    app.route('/mgmt/v1/tenant/updateTenantStatus')
-        .post(tenantController.postUpdateTenantStatus);
-
+    app.route('/mgmt/v1/tenant/findTenant')
+        .post(tenantController.postFindTenant);
 
     /**
      * 修改店铺信息
      */
-    app.route('/mgmt/v1/tenant/updateTenantDesc')
-        .post(tenantController.postUpdateTenantDesc);
+    app.route('/mgmt/v1/tenant/updateTenant')
+        .post(tenantController.postUpdateTenant);
 
     /**
      * 用户更新商铺图片

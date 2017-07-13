@@ -15,12 +15,9 @@ const tenant = (sequelize, DataTypes) => {
         name:{
             type:DataTypes.STRING,
             unique:true,
-            set:function (val) {
-                if (val.length < 2){
-                    throw new Error;
-                }else {
-                    this.setDataValue('name',val);
-                }
+            allowNull: false,
+            validate:{
+                len: [2, 20]
             }
         },
         ownerID:{
@@ -38,7 +35,7 @@ const tenant = (sequelize, DataTypes) => {
         status:{
             type:DataTypes.ENUM,
             values:['open','close'],
-            defaultValue: 'open',
+            defaultValue: 'close',
             allowNull: false
         }
     },{

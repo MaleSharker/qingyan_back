@@ -293,12 +293,14 @@ exports.postPhoneLogin = (req, res, next) => {
             .then((user) => {
                 user.comparePassword(req.body.password, (error, isMatch) => {
                     if (!isMatch){
-                        console.log("- - - 1");
                         reject(error);
                     }
                     resolve(user);
                 })
-            });
+            })
+            .catch((error) => {
+                reject(error);
+            })
     });
 
     const saveUser = (user) => {
@@ -377,19 +379,21 @@ exports.postSMSCodeLogin = (req, res, next) => {
             }
         }))
         .then((user) => {
+            let token = SwallowUtil.genToken(user.phone);
+            user.token = token;
             return user.save().then((user) => new Promise((resolve, reject) => {
                 if (!user) {
                     reject();
+                }else {
+                    resolve(user);
                 }
-                resolve(user);
             }))
         })
         .then((user) => {
             if (!user){
                 res.json({status:ErrorList.ErrorType.Error,result: {}, msg:'用户数据保存失败'})
             }else {
-                let token = SwallowUtil.genToken(user.phone);
-                res.json({status:ErrorList.ErrorType.Success,result: {token}, msg:'用户登录成功'})
+                res.json({status:ErrorList.ErrorType.Success,result: {token:user.token}, msg:'用户登录成功'})
             }
         })
         .catch((err) => {

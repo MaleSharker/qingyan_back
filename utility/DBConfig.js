@@ -23,7 +23,7 @@ exports.configMysql = () => {
      * Connect to mysql
      */
     sequelize = new Sequelize('qingyan_mysql','ccbai','bai117570',{
-        host:'192.168.0.157',
+        host:process.env.MySQL_URL,
         dialect:'mysql',
 
         pool:{

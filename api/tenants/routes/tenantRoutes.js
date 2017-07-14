@@ -4,7 +4,7 @@
 
 const path = require('path');
 const tenantController = require('../controllers/tenantController');
-const brandController = require('../controllers/brandManageController');
+var brandController = require('../controllers/brandController');
 
 module.exports = function tenantRoutes(app) {
 
@@ -32,12 +32,30 @@ module.exports = function tenantRoutes(app) {
     app.route('/mgmt/v1/tenant/uploadTenantImage')
         .post(tenantController.postUploadTenantImage);
 
+    //* * * * * 商品品牌相关 * * * * * //
     /**
-     * 店铺创建商品品牌
+     * 创建商品品牌
      */
-    app.route('/mgmt/v1/tenant/tenantCreateBrand')
-        .post(brandController.postTenantCreateBrand);
+    app.route('/mgmt/v1/tenant/createBrand')
+        .post(brandController.postCreateBrand);
 
+    /**
+     * 更新品牌信息
+     */
+    app.route('/mgmt/v1/tenant/updateBrand')
+        .post(brandController.postUpdateBrand);
+
+    /**
+     * 查询商铺所有品牌
+     */
+    app.route('/mgmt/v1/tenant/findAllBrand')
+        .post(brandController.postFindAllBrand);
+
+    /**
+     * 上传品牌图片
+     */
+    app.route('/mgmt/v1/tenant/uploadBrandImg')
+        .post(brandController.postUploadBrandImg);
 
 };
 

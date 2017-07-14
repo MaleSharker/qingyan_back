@@ -3,9 +3,8 @@
  */
 
 module.exports = function (app) {
-    var searchMdseInfoList = require('../controllers/searchMdseInfoList');
+    // var searchMdseInfoList = require('../controllers/searchMdseInfoList');
     var categoryManager = require('../controllers/categoryManage');
-    var brandController = require('../controllers/brandController');
     let spuController = require('../controllers/spuController');
 
 
@@ -19,21 +18,20 @@ module.exports = function (app) {
     /**
      * 商品列表
      */
-    app.route('/client/v1/product/searchMdseInfoList')
-        .post(searchMdseInfoList.searchMdseList);
+    // app.route('/client/v1/product/searchMdseInfoList')
+    //     .post(searchMdseInfoList.searchMdseList);
 
     /**
      * 增加商品
      */
-    app.route('/mgmt/v1/product/createMdseItem')
-        .post(searchMdseInfoList.createMdseItem);
+    app.route('/mgmt/v1/product/createSPU')
+        .post(spuController.postCreateSPU);
 
-    //* * * * * 商品品牌相关 * * * * * //
     /**
-     * 创建商品品牌
+     * 品牌下商品列表
      */
-    app.route('/mgmt/v1/tenant/createBrand')
-        .post(brandController.postCreateBrand);
+    app.route('/mgmt/v1/product/tenantAllSPU')
+        .post(spuController.postTenantAllSPU);
 
 };
 

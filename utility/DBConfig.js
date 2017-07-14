@@ -64,6 +64,8 @@ exports.configMysql = () => {
     const SpecsRelation = sequelize.import(global.apiPathPrefix + '/api/product/models/specsRelation');
     //SPU
     const SPU = sequelize.import(global.apiPathPrefix + '/api/product/models/spu');
+    //商品详情图
+    const SPUImages = sequelize.import(global.apiPathPrefix + '/api/product/models/spuImages');
     //SKU
     const SKU = sequelize.import(global.apiPathPrefix + '/api/product/models/sku');
     //商品属性
@@ -76,32 +78,41 @@ exports.configMysql = () => {
 
     Category.sync();
     Category.hasMany(SPU,{
+        as: 'SPUs',
         foreignKey: 'category_id',
         target: 'category_id'
     });
 
     Tenant.sync();
     Tenant.hasMany(Brand, {
-        as: 'tenant',
+        as: 'Brands',
         foreignKey: 'tenant_id',
         target: 'tenant_id'
     });
 
     Brand.sync();
     Brand.hasMany(SPU, {
-        as:'brand',
+        as:'SPUs',
         foreignKey:'brand_id',
         target:'brand_id'
     });
 
     SPU.sync();
     SPU.hasMany(SKU,{
-        as: 'spu',
+        as: 'SKUs',
+        foreignKey: 'spu_id',
+        target: 'spu_id'
+    });
+    SKU.sync();
+
+    SPU.hasMany(SPUImages,{
+        as:'Images',
         foreignKey: 'spu_id',
         target: 'spu_id'
     });
 
-    SKU.sync();
+    SPUImages.sync();
+
     /* - - - - - */
     SKU.hasOne(SpecsRelation, {
         foreignKey: 'sku_id',
@@ -110,7 +121,7 @@ exports.configMysql = () => {
 
     SpecsGroup.sync();
     SpecsGroup.hasMany(Specs,{
-        as:'specsgroup',
+        as:'Specses',
         foreignKey: 'group_id',
         target: 'group_id'
     });
@@ -122,7 +133,7 @@ exports.configMysql = () => {
 
     Specs.sync();
     Specs.hasMany(SpecsChoice, {
-        as: 'specs',
+        as: 'SpecsChoices',
         foreignKey: 'specs_id',
         target: 'specs_id'
     });
@@ -139,14 +150,14 @@ exports.configMysql = () => {
 
     Attribute.sync();
     AttriChoice.hasMany(Attribute, {
-        as:'attrichoice',
+        as:'Attributes',
         foreignKey:'attrichoice_id',
         target: 'choice_id'
     });
     AttriChoice.sync();
 
     AttriRelation.hasOne(AttriChoice, {
-        as: 'attriRelation',
+        as: 'AttriChoices',
         foreignKey: 'attri_relation_id',
         target: 'attri_relation_id'
     });
@@ -243,6 +254,15 @@ exports.SpecsRelation = () => {
  */
 exports.SPU = () => {
     return sequelize.import(global.apiPathPrefix + '/api/product/models/spu');
+};
+
+/**
+ * 商品详情图列表
+ * @returns {Model}
+ * @constructor
+ */
+exports.SPUImages = () => {
+    return sequelize.import(global.apiPathPrefix + '/api/product/models/spuImages');
 };
 
 /**

@@ -128,9 +128,22 @@ exports.postFindTenant = (req, res, next) => {
                 reject({error:'没有该用户的信息'});
             }
         }))
-        .then((tenant) => {
-            if (tenant){
-                res.json({status:ErrorType.Success,result:{tenant}, msg:'success'});
+        .then((tenant) => new Bluebird((resolve, reject) => {
+            tenant
+                .getBrands()
+                .then((brands) => {
+                    resolve({tenant:tenant, brands:brands})
+                })
+                .catch((errors) => {
+                    reject(errors);
+                })
+        }))
+        .then((obj) => {
+            if (obj){
+                res.json({status:ErrorType.Success,result:{
+                    tenant:obj.tenant,
+                    brand_list: obj.brands
+                }, msg:'success'});
             }else{
                 res.json({status:ErrorType.DBError,result:{}, msg:'没有商铺信息'});
             }

@@ -49,14 +49,15 @@ const passportConfig = require('./config/passport');
 const app = express();
 
 /**
+ * Connect to MySQL and Config Schema
+ */
+DBConfig.configMysql();
+
+/**
  * Connect to MongoDB
  */
 DBConfig.configMongoose();
 
-/**
- * Connect to MySQL and Config Schema
- */
-DBConfig.configMysql();
 
 /**
  * Express configuration

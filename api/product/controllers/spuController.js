@@ -10,6 +10,8 @@ const fs = require('fs');
 
 let SPU = DBConfig.SPU();
 let SKU = DBConfig.SKU();
+let AttriChoice = DBConfig.AttriChoice();
+let AttriRelation = DBConfig.AttriRelation();
 
 /**
  * 创建 SPU
@@ -242,15 +244,16 @@ exports.postUploadSPUDetailImages = (req,res,next) => {
  */
 exports.postSPUDetail = (req, res, next) => {
     req.assert('spuID','parameter spuID can not be empty').notEmpty();
+    req.assert('tenantID', 'parameter tenantID can not be empty').notEmpty();
     let errors = req.validationErrors();
-    if (!res.finished){
+    if (errors){
         return res.json({status:ErrorType.ParameterError, result:{errors}, msg:'parameter validate error'})
     }
 
     SwallowUtil
-        .validateUser(req.headers.phone, req.headers.token)
-        .then(() => {
-            res.json({status:ErrorType.Success, result:{}, msg:'success'})
+        .validateTenantOperator(req.headers.phone, req.headers.token, req.body.tenantID)
+        .then((tenant) => {
+            res.json({status:ErrorType.Success, result:{tenant}, msg:'success'})
         })
         .catch((errors) => {
             if (!res.finished) {
@@ -268,6 +271,7 @@ exports.postSPUDetail = (req, res, next) => {
  */
 exports.postCreateSKU = (req, res, next) => {
     req.assert('spuID','parameter spuID can not be empty').notEmpty();
+    req.assert('tenantID','parameter tenantID can not be empty').notEmpty();
     req.assert('name','parameter name can not be empty').notEmpty();
     req.assert('price','parameter price can not be empty').notEmpty();
     req.assert('stock','parameter stock can not be empty').isInt();
@@ -277,8 +281,9 @@ exports.postCreateSKU = (req, res, next) => {
     }
 
     SwallowUtil
-        .validateUser(req.headers.phone, req.headers.token)
-        .then(() => {
+        .validateTenantOperator(req.headers.phone, req.headers.token, req.body.tenantID)
+        .then((tenanat) => {
+            // console.log('1 - - - ',tenanat);
             return SPU
                 .findOne({
                     where:{
@@ -306,3 +311,64 @@ exports.postCreateSKU = (req, res, next) => {
 
 };
 
+
+/**
+ * 删除 SKU
+ * @param req
+ * @param res
+ * @param next
+ */
+exports.postDeleteSKU = (req,res,next) => {
+    req.assert('tenantID','parameter tenantID can not be empty').notEmpty();
+    req.assert('skuID','parameter skuID can not be empty').notEmpty();
+    let errors = req.validationErrors();
+    if (errors){
+        return res.json({status:ErrorType.ParameterError, result:{errors}, msg:'parameter validate error'})
+    }
+
+
+    SwallowUtil
+        .validateTenantOperator(req.headers.phone, req.headers.token, req.body.tenantID)
+        .then(() => {
+            return SKU
+                .findOne({
+                    where:{
+                        sku_id:req.body.skuID
+                    }
+                })
+        })
+        .then((sku) => {
+            return sku.getAttriRelations();
+        })
+        .then((relations) => {
+            let relationIDs = [];
+            for (var i in relations){
+                relationIDs.push(relations[i].attri_relation_id)
+            }
+
+            return AttriRelation
+                .destroy({
+                    where:{
+                        attri_relation_id:{
+                            $in:relationIDs
+                        },
+                    }
+                })
+        })
+        .then(() => {
+            return SKU
+                .destroy({
+                    where:{
+                        sku_id:req.body.skuID
+                    }
+                })
+        })
+        .then(() => {
+            res.json({status:ErrorType.Success,result:{},msg:'success'})
+        })
+        .catch((error) => {
+            if (!res.finished){
+                res.json({status:ErrorType.Error, result:{error}, msg:'error'})
+            }
+        })
+};

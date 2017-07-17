@@ -163,12 +163,12 @@ exports.configMysql = () => {
     AttriChoice.sync();
 
     AttriChoice.hasMany(AttriRelation, {
-        as: 'AttriRelation',
+        as: 'AttriRelations',
         foreignKey: 'choice_id',
         target: 'choice_id'
     });
-    SKU.hasOne(AttriRelation, {
-        as: 'AttriRelation',
+    SKU.hasMany(AttriRelation, {
+        as: 'AttriRelations',
         foreignKey: 'sku_id',
         target: 'sku_id'
     });

@@ -37,11 +37,22 @@ module.exports = function (app) {
         .post(spuController.postUploadSPUDetailImages);
 
     /**
+     * 获取SPU详情
+     */
+    app.route('/mgmt/v1/product/SPUDetail')
+        .post(spuController.postSPUDetail);
+
+    /**
      * 创建 SKU
      */
     app.route('/mgmt/v1/product/createSKU')
         .post(spuController.postCreateSKU);
 
+    /**
+     * 删除 SKU
+     */
+    app.route('/mgmt/v1/product/deleteSKU')
+        .post(spuController.postDeleteSKU);
 
 };
 

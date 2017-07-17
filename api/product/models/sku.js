@@ -15,9 +15,19 @@ const sku = (sequelize, DataTypes) => {
         ske_encode: {
             type:DataTypes.STRING,
             allowNull: true,
+            defaultValue: ''
         },
         price:{
             type: DataTypes.DECIMAL(5,2),
+        },
+        stock:{
+            type:DataTypes.INTEGER,
+            allowNull: false,
+            defaultValue:0
+        },
+        name:{
+            type:DataTypes.STRING,
+            allowNull:false
         }
 
     }, {

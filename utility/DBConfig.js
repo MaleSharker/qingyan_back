@@ -147,21 +147,28 @@ exports.configMysql = () => {
     SpecsRelation.sync();
     /* - - - - - - */
 
+    Tenant.hasMany(Attribute,{
+        as: 'Attributes',
+        foreignKey: 'tenant_id',
+        target: 'tenant_id'
+    });
 
     Attribute.sync();
-    AttriChoice.hasMany(Attribute, {
-        as:'Attributes',
-        foreignKey:'attrichoice_id',
-        target: 'choice_id'
+
+    Attribute.hasMany(AttriChoice,{
+        as:'AttriChoice',
+        foreignKey:'attribute_id',
+        target:'attri_id'
     });
     AttriChoice.sync();
 
-    AttriRelation.hasOne(AttriChoice, {
-        as: 'AttriChoices',
-        foreignKey: 'attri_relation_id',
-        target: 'attri_relation_id'
+    AttriChoice.hasMany(AttriRelation, {
+        as: 'AttriRelation',
+        foreignKey: 'choice_id',
+        target: 'choice_id'
     });
-    AttriRelation.hasOne(SKU, {
+    SKU.hasOne(AttriRelation, {
+        as: 'AttriRelation',
         foreignKey: 'sku_id',
         target: 'sku_id'
     });

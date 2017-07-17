@@ -6,7 +6,10 @@ const SwallowUtil = require(global.apiPathPrefix + '/utility/SwallowUtil');
 const DBConfig = require(global.apiPathPrefix + '/utility/DBConfig');
 const ErrorType = require(global.apiPathPrefix + '/errors/errorList').ErrorType;
 const Bluebird = require('bluebird');
+const fs = require('fs');
 
+let SPU = DBConfig.SPU();
+let SKU = DBConfig.SKU();
 
 /**
  * 创建 SPU
@@ -62,7 +65,6 @@ exports.postCreateSPU = (req, res, next) => {
 
 };
 
-
 /**
  * 获取品牌商品列表
  * page 从 1 开始
@@ -110,7 +112,13 @@ exports.postTenantAllSPU = (req,res,next) => {
 
 };
 
-
+/**
+ * 分类获取 SPU 列表
+ * page, categoryID, items_per_page
+ * @param req
+ * @param res
+ * @param next
+ */
 exports.postCategoryAllSPU = (req, res, next) => {
 
     req.assert('categoryID','parameter categoryID can not be empty').isInt();
@@ -121,10 +129,180 @@ exports.postCategoryAllSPU = (req, res, next) => {
         return res.json({status:ErrorType.ParameterError, result:{errors}, msg:'parameters validate error'})
     }
 
+    let SPU = DBConfig.SPU();
     SwallowUtil
         .validateUser(req.headers.phone, req.headers.token)
         .then(() => {
+            return SPU
+                .findAndCount({
+                    where:{
+                        category_id: req.body.categoryID
+                    },
+                    offset: (parseInt(req.body.page) - 1) * parseInt(req.body.items_per_page),
+                    limit: parseInt(req.body.items_per_page)
+                })
+        })
+        .then((spus) => {
+            return res.json({status:ErrorType.Error, result:{spus}, msg: 'success'})
+        })
+        .catch((error) => {
+            if (!res.finished){
+                res.json({status:ErrorType.Error, result:{error}, msg:'error'})
+            }
+        })
+};
 
+
+/**
+ * 上传SPU详情图
+ * @param req
+ * @param res
+ * @param next
+ */
+exports.postUploadSPUDetailImages = (req,res,next) => {
+    if(req.body.spuID == undefined || req.body.imgRank == undefined){
+        return res.json({status:ErrorType.ParameterError, result:{error:'请检查参数'}, msg:'parameter validate error'})
+    }
+
+    let SPU = DBConfig.SPU();
+    let SPUImage = DBConfig.SPUImages();
+
+    var imgName;
+
+    SwallowUtil
+        .validateUser(req.headers.phone, req.headers.token)
+        .then(() => {
+            return SPU
+                .findOne({where:{spu_id: req.headers.spuID}})
+        })
+        .then((spu) => new Bluebird((resolve,reject) => {
+            SPUImage
+                .findOrCreate({
+                    where:{
+                        spu_id:req.body.spuID,
+                        image_rank: req.body.imgRank
+                    },
+                    defaults:{
+                        image_name:''
+                    }
+                })
+                .spread((spuImage,created) => {
+                    if (created){
+                        resolve(spuImage);
+                    }else{
+                        let imgName = global.apiPathPrefix + `/uploads/spuImages/${spuImage.get('image_name')}`;
+                        fs.unlink(imgName, (error) => {
+                            resolve(spuImage);
+                        })
+                    }
+                })
+                .catch((error) => {
+                    reject(error);
+                })
+        }))
+        .then((spuImage) => new Bluebird((resolve, reject) => {
+
+            let imgFile = req.files.imgFile;
+            imgName = SwallowUtil.md5Encode((new Date()).getTime().toString() + spuImage.get('spu_id')) + '.jpg'
+
+            imgFile.mv(global.apiPathPrefix + `/uploads/spuImages/${imgName}`,(err) => {
+                if (err){
+                    reject(err);
+                }else {
+                    resolve(spuImage);
+                }
+            })
+
+        }))
+        .then((spuImage) => {
+            return spuImage
+                .update({
+                    image_name:imgName
+                },{
+                    fields:['image_name'],
+                    validate:true
+                })
+        })
+        .then((spuImage) => {
+            res.json({status:ErrorType.Success, result:{imgName:spuImage.get('image_name')},msg:'success'})
+        })
+        .catch((error) => {
+            if (!res.finished){
+                res.json({status:ErrorType.Error,result:{error},msg:'error'})
+            }
         })
 
 };
+
+/**
+ * 获取 SPU 详情
+ * @param req
+ * @param res
+ * @param next
+ */
+exports.postSPUDetail = (req, res, next) => {
+    req.assert('spuID','parameter spuID can not be empty').notEmpty();
+    let errors = req.validationErrors();
+    if (!res.finished){
+        return res.json({status:ErrorType.ParameterError, result:{errors}, msg:'parameter validate error'})
+    }
+
+    SwallowUtil
+        .validateUser(req.headers.phone, req.headers.token)
+        .then(() => {
+            res.json({status:ErrorType.Success, result:{}, msg:'success'})
+        })
+        .catch((errors) => {
+            if (!res.finished) {
+                res.json({status:ErrorType.Error,result:{errors}, msg:'error'})
+            }
+        })
+
+};
+
+/**
+ * 创建 SKU
+ * @param req
+ * @param res
+ * @param next
+ */
+exports.postCreateSKU = (req, res, next) => {
+    req.assert('spuID','parameter spuID can not be empty').notEmpty();
+    req.assert('name','parameter name can not be empty').notEmpty();
+    req.assert('price','parameter price can not be empty').notEmpty();
+    req.assert('stock','parameter stock can not be empty').isInt();
+    let errors = req.validationErrors();
+    if (errors){
+        return res.json({status:ErrorType.ParameterError, result:{errors}, msg:'parameters validate error'})
+    }
+
+    SwallowUtil
+        .validateUser(req.headers.phone, req.headers.token)
+        .then(() => {
+            return SPU
+                .findOne({
+                    where:{
+                        spu_id:req.body.spuID
+                    }
+                })
+        })
+        .then((spu) => {
+            return SKU
+                .create({
+                    name:req.body.name,
+                    spu_id:spu.get('spu_id'),
+                    price: req.body.price,
+                    stock: req.body.stock
+                })
+        })
+        .then((sku) => {
+            res.json({status:ErrorType.Success, result:{sku}, msg:'success'})
+        })
+        .catch((error) => {
+            if (!res.finished){
+                res.json({status:ErrorType.Success, result:{error}, msg:'error'})
+            }
+        })
+
+};
+

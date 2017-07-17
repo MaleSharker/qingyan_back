@@ -36,11 +36,11 @@ global.apiPathPrefix = __dirname;
 const productRoutes = require('./api/product/routes/productRoutes');
 const userRoutes = require('./api/user/routes/userRoutes');
 const tenantRoutes = require('./api/tenants/routes/tenantRoutes');
+const attriRoutes = require('./api/product/routes/attributeRoutes');
 
 /**
  * API keys and Passport configuration
  */
-
 const passportConfig = require('./config/passport');
 
 /**
@@ -120,6 +120,7 @@ app.use(express.static(path.join(__dirname, 'uploads'), { maxAge: 31557600000 })
 productRoutes(app);
 userRoutes(app);
 tenantRoutes(app);
+attriRoutes(app);
 
 app.use((req, res) => {
     if (!res.finished){
@@ -138,13 +139,3 @@ app.listen(app.get('port'), () => {
 });
 
 module.exports = app;
-
-
-
-
-
-
-
-
-
-

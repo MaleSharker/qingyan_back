@@ -161,13 +161,14 @@ exports.postCreateAttriChoices = (req,res) => {
 
     req.assert('attriID','parameter attriID can not be empty').notEmpty();
     req.assert('attriChoices','parameter choiceNames can not be empty').notEmpty();
+    req.assert('tenantID', 'parameter tenantID can not be empty').notEmpty();
     let errors = req.validationErrors();
     if (errors){
         return res.json({status:ErrorType.Success,result:{errors},msg:'parameters validate error'})
     }
 
     SwallowUtil
-        .validateUser(req.headers.phone,req.headers.token)
+        .validateTenantOperator(req.headers.phone, req.headers.token, req.body.tenantID)
         .then(() => {
             return Attribute
                 .findOne({
@@ -249,13 +250,14 @@ exports.postDeleteAttriChoice = (req,res) => {
 exports.postCreateAttriRelation = (req,res) => {
     req.assert('choiceID','parameter choiceID can not be empty').notEmpty();
     req.assert('skuID','parameter skuID can not be empty').notEmpty();
+    req.assert('tenantID', 'parameter tenantID can not be empty').notEmpty();
     let errors = req.validationErrors();
     if (errors){
         return res.json({status:ErrorType.ParameterError, result:{errors}, msg:'parameters validate error'})
     }
 
     SwallowUtil
-        .validateUser(req.headers.phone, req.headers.token)
+        .validateTenantOperator(req.headers.phone, req.headers.token,req.body.tenantID)
         .then(() => {
             return AttriRelation
                 .findOrCreate({
@@ -296,12 +298,16 @@ exports.postDeleteAttriRelation = (req,res) => {
                 .destroy({
                     where:{
                         sku_id:req.body.skuID,
-                        choice_id: req.boyd.choiceID
+                        choice_id: req.body.choiceID
                     }
                 })
         })
         .then((success) => {
-            return res.json({status:ErrorType.Success, result:{success}, msg:'success'})
+            if (success == 1){
+                return res.json({status:ErrorType.Success, result:{success}, msg:'success'})
+            }else {
+                return res.json({status:ErrorType.Error, result:{}, msg:'未找到对应项'})
+            }
         })
         .catch((error) => {
             if (!res.finished){

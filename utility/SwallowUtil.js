@@ -6,6 +6,8 @@ const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const User = require(global.apiPathPrefix + '/api/user/models/User');
 
+const DBConfig = require('./DBConfig');
+
 /**
  * 手机号码校验
  * @param phoneNumber
@@ -49,7 +51,7 @@ exports.genToken = (phone) => {
 };
 
 /**
- * 验证用户身份
+ * 验证普通用户身份
  * @param phone
  * @param token
  */
@@ -59,13 +61,15 @@ exports.validateUser = (phone, token) => new Promise((resolve, reject) => {
             .findOne({phone:phone})
             .then((user) => {
                 if (token == user.token){
-                    jwt.verify(token,process.env.TOKEN_SECRET, (error, decode) => {
-                        if (decode && decode.msg == phone){
-                            resolve();
-                        }else{
-                            reject({error:'Token 验证错误'})
-                        }
-                    });
+                    return new Promise((resolve, reject) => {
+                        jwt.verify(token,process.env.TOKEN_SECRET, (error, decode) => {
+                            if (decode && decode.msg == phone){
+                                resolve();
+                            }else{
+                                reject({error:'Token 验证错误'})
+                            }
+                        });
+                    })
                 }else {
                     reject({error:'Token 失效'});
                 }
@@ -78,6 +82,59 @@ exports.validateUser = (phone, token) => new Promise((resolve, reject) => {
     }
 });
 
+/**
+ * 验证商铺所有者身份
+ * @param phone
+ * @param token
+ * @param tenantID
+ */
+exports.validateTenantOperator = (phone, token, tenantID) => new Promise((resolve, reject) => {
+    if (verifyPhoneNumber(phone)){
+         User
+            .findOne({phone:phone})
+            .then((user) => {
+                if (token == user.token){
+                    return new Promise((resolve, reject) => {
+                        jwt.verify(token,process.env.TOKEN_SECRET, (error, decode) => {
+                            if (decode && decode.msg == phone){
+                                resolve(user);
+                            }else{
+                                reject({error:'Token 验证错误'})
+                            }
+                        });
+                    });
+                }else {
+                    reject({error:'Token 失效'});
+                }
+            })
+            .then((user) => {
+                let Tenant = DBConfig.Tenant();
+                return Tenant
+                    .findOne({
+                        where:{
+                            ownerID:user.userID,
+                            tenant_id: tenantID
+                        }
+                    })
+                    .then((tenant) => {
+                        if (tenant){
+                            resolve(tenant);
+                        }else {
+                            reject({error: 'can not find tenant'});
+                        }
+                    })
+                    .catch((error) => {
+                        reject(error);
+                    })
+            })
+            .catch((error) => {
+                reject(error);
+            })
+
+    }else {
+        reject({error:'token 错误'})
+    }
+});
 
 /**
  * 验证码时效检查

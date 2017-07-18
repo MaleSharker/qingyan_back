@@ -155,5 +155,33 @@ exports.validateSMSDate = (smsDate) => {
     }
 };
 
+/**
+ * 判断数组是否含有某元素
+ * @param array
+ * @param item
+ * @returns {boolean}
+ */
+exports.validateContains = (array,item) => {
 
+    for (var i in array){
+        let value = array[i]
+        if (value === item){
+            return true;
+        }
+    }
+    return false;
+};
 
+/**
+ * 删除数组中的指定元素
+ * @param array
+ * @param item
+ */
+exports.removeByValue = (array,item) => {
+    for (var i in array){
+        if (array[i] === item){
+            array.splice(i,1);
+            break;
+        }
+    }
+};

@@ -172,6 +172,11 @@ exports.configMysql = () => {
         foreignKey: 'sku_id',
         target: 'sku_id'
     });
+    Attribute.hasMany(AttriRelation, {
+        as: 'AttriRelation',
+        foreignKey: 'attri_id',
+        target: 'attri_id'
+    });
 
     AttriRelation.sync();
 

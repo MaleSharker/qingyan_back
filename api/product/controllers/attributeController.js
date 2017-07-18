@@ -251,6 +251,7 @@ exports.postCreateAttriRelation = (req,res) => {
     req.assert('choiceID','parameter choiceID can not be empty').notEmpty();
     req.assert('skuID','parameter skuID can not be empty').notEmpty();
     req.assert('tenantID', 'parameter tenantID can not be empty').notEmpty();
+    req.assert('attriID', 'parameter attriID can not be empty').notEmpty();
     let errors = req.validationErrors();
     if (errors){
         return res.json({status:ErrorType.ParameterError, result:{errors}, msg:'parameters validate error'})
@@ -259,16 +260,32 @@ exports.postCreateAttriRelation = (req,res) => {
     SwallowUtil
         .validateTenantOperator(req.headers.phone, req.headers.token,req.body.tenantID)
         .then(() => {
-            return AttriRelation
-                .findOrCreate({
-                    where:{
-                        sku_id:req.body.skuID,
-                        choice_id:req.body.choiceID
-                    }
-                })
+            return new Promise((resolve, reject) => {
+                AttriRelation
+                    .findOrCreate({
+                        where:{
+                            sku_id:req.body.skuID,
+                            choice_id:req.body.choiceID,
+                            attri_id: req.body.attriID
+                        }
+                    })
+                    .spread((relation,created) => {
+                        resolve({
+                            relation,
+                            created
+                        })
+                    })
+                    .catch((error) => {
+                        reject(error);
+                    })
+            });
         })
-        .then((relation) => {
-            res.json({status:ErrorType.Success, result:{relation}, msg:'success'})
+        .then((obj) => {
+            if (obj.created){
+                res.json({status:ErrorType.Success, result:{relation:obj.relation}, msg:'success'})
+            }else{
+                res.json({status:ErrorType.Error, result:{relation:obj.relation}, msg:'can not add same attribute to on SPU'})
+            }
         })
         .catch((errors) => {
             if (!res.finished){

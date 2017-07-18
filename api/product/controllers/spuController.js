@@ -10,6 +10,9 @@ const fs = require('fs');
 
 let SPU = DBConfig.SPU();
 let SKU = DBConfig.SKU();
+let Brand = DBConfig.Brand();
+let SPUImages = DBConfig.SPUImages();
+let Attribute = DBConfig.Attribute();
 let AttriChoice = DBConfig.AttriChoice();
 let AttriRelation = DBConfig.AttriRelation();
 
@@ -154,7 +157,6 @@ exports.postCategoryAllSPU = (req, res, next) => {
         })
 };
 
-
 /**
  * 上传SPU详情图
  * @param req
@@ -250,10 +252,81 @@ exports.postSPUDetail = (req, res, next) => {
         return res.json({status:ErrorType.ParameterError, result:{errors}, msg:'parameter validate error'})
     }
 
+    var detailObj = {};
     SwallowUtil
         .validateTenantOperator(req.headers.phone, req.headers.token, req.body.tenantID)
         .then((tenant) => {
-            res.json({status:ErrorType.Success, result:{tenant}, msg:'success'})
+            detailObj.tenant = tenant;
+            return SPU
+                .findOne({
+                    where:{
+                        spu_id: req.body.spuID
+                    }
+                })
+        })
+        .then((spu) => {
+            detailObj.spu = spu;
+            return Brand
+                .findOne({
+                    where:{
+                        brand_id: spu.get('brand_id')
+                    }
+                })
+        })
+        .then((brand) => {
+            detailObj.brand = brand;
+            return SPUImages
+                .findAll({
+                    where:{
+                        spu_id: detailObj.spu.spu_id
+                    }
+                })
+        })
+        .then((images) => {
+            detailObj.images = images;
+            return SKU
+                .findAll({
+                    where: {
+                        spu_id: detailObj.spu.spu_id
+                    }
+                })
+        })
+        .then((skus) => {
+            detailObj.skus = skus;
+            var skuIDs = [];
+            for (var i in skus){
+                let id = skus[i].sku_id;
+                skuIDs.push(id);
+            }
+            return AttriRelation
+                .findAll({
+                    where:{
+                        sku_id:{
+                            $in:skuIDs
+                        }
+                    }
+                })
+        })
+        .then((relations) => {
+            detailObj.attriRelations = relations;
+            var attriIDs = [1,2];
+            for (var i in relations){
+                let attriID = relations[i].get('attri_id');
+                if (!SwallowUtil.validateContains(attriIDs,attriID)){
+                    attriIDs.push(attriID);
+                }
+            }
+            return Attribute
+                .findAll({
+                    where:{
+                        attri_id:{
+                            $in:attriIDs
+                        }
+                    }
+                })
+        })
+        .then((attributes) => {
+            res.json(attributes)
         })
         .catch((errors) => {
             if (!res.finished) {

@@ -17,7 +17,8 @@ const spu = (sequelize, DataTypes) => {
         },
         spu_encode: {
             type: DataTypes.STRING,
-            allowNull: true
+            allowNull: true,
+            defaultValue: ''
         },
         brief: {
             type: DataTypes.STRING,

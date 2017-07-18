@@ -256,7 +256,7 @@ exports.postSPUDetail = (req, res, next) => {
     SwallowUtil
         .validateTenantOperator(req.headers.phone, req.headers.token, req.body.tenantID)
         .then((tenant) => {
-            detailObj.tenant = tenant;
+            detailObj.tenant = tenant.toJSON();
             return SPU
                 .findOne({
                     where:{
@@ -265,7 +265,7 @@ exports.postSPUDetail = (req, res, next) => {
                 })
         })
         .then((spu) => {
-            detailObj.spu = spu;
+            detailObj.spu = spu.toJSON();
             return Brand
                 .findOne({
                     where:{
@@ -274,7 +274,7 @@ exports.postSPUDetail = (req, res, next) => {
                 })
         })
         .then((brand) => {
-            detailObj.brand = brand;
+            detailObj.brand = brand.toJSON();
             return SPUImages
                 .findAll({
                     where:{
@@ -283,16 +283,22 @@ exports.postSPUDetail = (req, res, next) => {
                 })
         })
         .then((images) => {
-            detailObj.images = images;
+            detailObj.images = [];
+            images.map((image) => {
+                detailObj.images.push(image.toJSON())
+            });
             return SKU
                 .findAll({
                     where: {
                         spu_id: detailObj.spu.spu_id
                     }
-                })
+                });
         })
         .then((skus) => {
-            detailObj.skus = skus;
+            detailObj.skus = [];
+            skus.map((sku) => {
+                detailObj.skus.push(sku)
+            });
             var skuIDs = [];
             for (var i in skus){
                 let id = skus[i].sku_id;
@@ -308,8 +314,11 @@ exports.postSPUDetail = (req, res, next) => {
                 })
         })
         .then((relations) => {
-            detailObj.attriRelations = relations;
-            var attriIDs = [1,2];
+            detailObj.attriRelations = [];
+            relations.map((relation) => {
+                detailObj.attriRelations.push(relation.toJSON());
+            });
+            var attriIDs = [];
             for (var i in relations){
                 let attriID = relations[i].get('attri_id');
                 if (!SwallowUtil.validateContains(attriIDs,attriID)){
@@ -326,7 +335,38 @@ exports.postSPUDetail = (req, res, next) => {
                 })
         })
         .then((attributes) => {
-            res.json(attributes)
+            detailObj.attributes = [];
+            attributes.map((attribute) => {
+                detailObj.attributes.push(attribute.toJSON())
+            });
+            var choiceIDs = [];
+            for (var i in detailObj.attriRelations){
+                detailObj.attributes[i].choices = [];
+                let choiceID = detailObj.attriRelations[i].choice_id;
+                if (!SwallowUtil.validateContains(choiceIDs,choiceID)){
+                    choiceIDs.push(choiceID)
+                }
+            }
+            return AttriChoice
+                .findAll({
+                    where:{
+                        choice_id:{
+                            $in:choiceIDs
+                        }
+                    }
+                })
+
+        })
+        .then((choices) => {
+            choices.map((choice) => {
+                for (var i in detailObj.attributes){
+                    let attriID = detailObj.attributes[i].attri_id;
+                    if (choice.get('attribute_id') == attriID){
+                        detailObj.attributes[i].choices.push(choice.toJSON())
+                    }
+                }
+            });
+            res.json({attributes:detailObj})
         })
         .catch((errors) => {
             if (!res.finished) {

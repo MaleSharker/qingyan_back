@@ -483,6 +483,7 @@ exports.postUpdateProfile = (req, res, next) => {
  */
 
 exports.postUploadImg = (req, res, next) => {
+
     if (!req.files){
         return res.json({status:ErrorList.ErrorType.Error, result:{}, msg:'没有检测到文件'});
     }

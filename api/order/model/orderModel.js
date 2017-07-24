@@ -20,20 +20,20 @@ const OrderStatus = [
 
 const orderModel = (sequelize, DataTypes) => {
 
-    const order = sequelize.define('order',{
+    const order = sequelize.define('ordermodel',{
 
         order_id:{
-            type: DataTypes.Number,
+            type: DataTypes.INTEGER,
             primaryKey: true,
             autoIncrement: true,
             allowNull: false
         },
         customer_id:{
-            type:DataTypes.Number,
+            type:DataTypes.INTEGER,
             allowNull: false
         },
         payment_id:{
-            type:DataTypes.Number
+            type:DataTypes.INTEGER
         },
         order_status_code:{
             type:DataTypes.ENUM,
@@ -41,7 +41,7 @@ const orderModel = (sequelize, DataTypes) => {
         },
         date_order_created:{
             type:DataTypes.DATE,
-            defaultValue: Date.now(),
+            defaultValue: new Date(),
             allowNull: false
         },
         date_order_payed:{

@@ -64,7 +64,7 @@ exports.validateUser = (phone, token) => new Promise((resolve, reject) => {
                     return new Promise((resolve, reject) => {
                         jwt.verify(token,process.env.TOKEN_SECRET, (error, decode) => {
                             if (decode && decode.msg == phone){
-                                resolve();
+                                resolve(user);
                             }else{
                                 reject({error:'Token 验证错误'})
                             }

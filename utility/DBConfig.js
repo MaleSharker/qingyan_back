@@ -19,6 +19,7 @@ exports.configMongoose = () => {
 
 
 exports.configMysql = () => {
+
     /**
      * Connect to mysql
      */
@@ -75,7 +76,7 @@ exports.configMysql = () => {
     //属性关系
     const AttriRelation = sequelize.import(global.apiPathPrefix + '/api/product/models/attriRelation');
 
-    /* * * * * */
+    //* * * * * */
     //优惠券
     const Coupons = sequelize.import(global.apiPathPrefix + '/api/order/model/coupons');
     //物流详情
@@ -86,6 +87,15 @@ exports.configMysql = () => {
     const Order = sequelize.import(global.apiPathPrefix + '/api/order/model/orderModel');
     //订单商品表
     const OrderSKUs = sequelize.import(global.apiPathPrefix + '/api/order/model/orderSKU');
+    //支付方式
+    const Payment = sequelize.import(global.apiPathPrefix + '/api/order/model/paymentMethod');
+
+    //* * * * - user - * * * * * */
+    //地址列表
+    const Address = sequelize.import(global.apiPathPrefix + '/api/user/models/Address');
+    //购物车列表
+    const ShoppingCart = sequelize.import(global.apiPathPrefix + '/api/user/models/ShoppingCart');
+
 
     Category.sync();
     Category.hasMany(SPU,{
@@ -215,8 +225,19 @@ exports.configMysql = () => {
     });
     OrderDelivery.sync();
 
+    Order.hasOne(Payment, {
+        as: 'Payment',
+        foreignKey: 'order_id',
+        target:'order_id'
+    });
+    Payment.sync();
+
     Coupons.sync();
 
+    /* * * * * - USER - * * * * */
+    Address.sync();
+
+    ShoppingCart.sync();
 
     // SKU.drop();
     // SPU.drop();
@@ -230,6 +251,14 @@ exports.configMysql = () => {
     // Attribute.drop();
     // AttriChoice.drop();
     // AttriRelation.drop();
+    // Coupons.drop();
+    // LogisticItems.drop();
+    // OrderDelivery.drop();
+    // Order.drop();
+    // OrderSKUs.drop();
+    // Payment.drop();
+    // Address.drop();
+    // ShoppingCart.drop();
 
 };
 
@@ -350,3 +379,76 @@ exports.AttriChoice = () => {
 exports.AttriRelation = () => {
     return sequelize.import(global.apiPathPrefix + '/api/product/models/attriRelation');
 };
+
+/**
+ * 优惠券
+ * @returns {Model}
+ * @constructor
+ */
+exports.Coupons = () => {
+    return sequelize.import(global.apiPathPrefix + '/api/order/model/coupons')
+};
+
+/**
+ * 物流消息条目
+ * @returns {Model}
+ * @constructor
+ */
+exports.LogisticItem = () => {
+    return sequelize.import(global.apiPathPrefix + '/api/order/model/logisticItems')
+};
+
+/**
+ * 物流详情
+ * @returns {Model}
+ * @constructor
+ */
+exports.OrderDelivery = () => {
+    return sequelize.import(global.apiPathPrefix + '/api/order/model/orderDelivery')
+};
+
+/**
+ * 订单详情
+ * @returns {Model}
+ * @constructor
+ */
+exports.OrderModel = () => {
+    return sequelize.import(global.apiPathPrefix + '/api/order/model/orderModel')
+};
+
+/**
+ * 订单商品列表
+ * @returns {Model}
+ * @constructor
+ */
+exports.OrderSKUs = () => {
+    return sequelize.import(global.apiPathPrefix + '/api/order/model/orderSKU')
+};
+
+/**
+ * 支付列表
+ * @returns {Model}
+ * @constructor
+ */
+exports.Payment = () => {
+    return sequelize.import(global.apiPathPrefix + '/api/order/model/paymentMethod')
+};
+
+/**
+ * 地址详情列表
+ * @returns {Model}
+ * @constructor
+ */
+exports.Address = () => {
+    return sequelize.import(global.apiPathPrefix + 'api/user/models/Address');
+};
+
+/**
+ * 购物车列表
+ * @returns {Model}
+ * @constructor
+ */
+exports.ShoppingCart = () => {
+    return sequelize.import(global.apiPathPrefix + 'api/user/models/ShoppingCart');
+};
+

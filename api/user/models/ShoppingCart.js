@@ -3,15 +3,41 @@
  */
 
 
-const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
+const shopCart = (sequelize,DataTypes) => {
 
-const shopCart = new Schema({
+    const cart = sequelize.define('shopcart',{
 
-},{
-    timeStamps:true
-});
+        cart_id:{
+            type: DataTypes.INTEGER,
+            primaryKey: true,
+            autoIncrement: true
+        },
+        user_id:{
+            type:DataTypes.INTEGER,
+            allowNull: false
+        },
+        sku_id:{
+            type:DataTypes.INTEGER,
+            allowNull: false
+        },
+        tenant_id:{
+            type:DataTypes.INTEGER,
+            allowNull: false
+        },
+        sku_count:{
+            type:DataTypes.INTEGER,
+            allowNull: false
+        }
 
-const ShoppingCart = mongoose.model('shoppingcart',shopCart);
+    },{
+        timestamps:true,
+        freezeTableName: true,
+        tableName: 'shop_cart'
+    });
 
-module.exports = ShoppingCart;
+    return cart;
+
+};
+
+
+module.exports = shopCart;

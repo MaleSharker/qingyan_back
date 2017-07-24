@@ -12,9 +12,9 @@ const DeliverStauts =[
     'send_back' //退回
 ];
 
-const orderDelivery = (requelize, DataTypes) => {
+const orderDelivery = (sequelize, DataTypes) => {
 
-    const delivery = sequelize.define('orderDelivery',{
+    const delivery = sequelize.define('orderdelivery',{
 
         deliver_id:{
             type:DataTypes.INTEGER,

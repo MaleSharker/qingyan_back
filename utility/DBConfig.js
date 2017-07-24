@@ -75,6 +75,17 @@ exports.configMysql = () => {
     //属性关系
     const AttriRelation = sequelize.import(global.apiPathPrefix + '/api/product/models/attriRelation');
 
+    /* * * * * */
+    //优惠券
+    const Coupons = sequelize.import(global.apiPathPrefix + '/api/order/model/coupons');
+    //物流详情
+    const LogisticItems = sequelize.import(global.apiPathPrefix + '/api/order/model/logisticItems');
+    //货运信息
+    const OrderDelivery = sequelize.import(global.apiPathPrefix + '/api/order/model/orderDelivery');
+    //订单
+    const Order = sequelize.import(global.apiPathPrefix + '/api/order/model/orderModel');
+    //订单商品表
+    const OrderSKUs = sequelize.import(global.apiPathPrefix + '/api/order/model/orderSKU');
 
     Category.sync();
     Category.hasMany(SPU,{
@@ -179,6 +190,33 @@ exports.configMysql = () => {
     });
 
     AttriRelation.sync();
+
+    /* * * * * * * * */
+    Order.sync();
+
+    Order.hasMany(OrderSKUs,{
+        as:'items',
+        foreignKey:'order_id',
+        target:'order_id'
+    });
+    OrderSKUs.sync();
+
+    Order.hasOne(OrderDelivery,{
+        as:'delivery',
+        foreignKey:'order_id',
+        target:'order_id'
+    });
+    OrderDelivery.sync();
+
+    OrderDelivery.hasMany(LogisticItems,{
+        as:'items',
+        foreignKey:'deliver_id',
+        target:'deliver_id'
+    });
+    OrderDelivery.sync();
+
+    Coupons.sync();
+
 
     // SKU.drop();
     // SPU.drop();

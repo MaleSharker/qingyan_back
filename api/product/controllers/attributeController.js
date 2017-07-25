@@ -28,7 +28,7 @@ exports.postCreateAttribute = (req,res) => {
     }
 
     SwallowUtil
-        .validateUser(req.headers.phone, req.headers.token)
+        .validateUser(req.headers.key, req.headers.token)
         .then(() => {
             return Tenant
                 .findOne({
@@ -70,7 +70,7 @@ exports.postUpdateAttribute = (req,res) => {
     }
 
     SwallowUtil
-        .validateUser(req.headers.phone, req.headers.token)
+        .validateUser(req.headers.key, req.headers.token)
         .then(() => {
             return Attribute
                 .update({
@@ -108,7 +108,7 @@ exports.postDeleteAttribute = (req,res) => {
     }
 
     SwallowUtil
-        .validateUser(req.headers.phone, req.headers.token)
+        .validateUser(req.headers.key, req.headers.token)
         .then(() => {
             return Tenant
                 .findOne({
@@ -168,7 +168,7 @@ exports.postCreateAttriChoices = (req,res) => {
     }
 
     SwallowUtil
-        .validateTenantOperator(req.headers.phone, req.headers.token, req.body.tenantID)
+        .validateTenantOperator(req.headers.key, req.headers.token, req.body.tenantID)
         .then(() => {
             return Attribute
                 .findOne({
@@ -218,7 +218,7 @@ exports.postDeleteAttriChoice = (req,res) => {
     }
 
     SwallowUtil
-        .validateUser(req.headers.phone, req.headers.token)
+        .validateUser(req.headers.key, req.headers.token)
         .then(() => {
             return AttriChoice
                 .destroy({
@@ -258,7 +258,7 @@ exports.postCreateAttriRelation = (req,res) => {
     }
 
     SwallowUtil
-        .validateTenantOperator(req.headers.phone, req.headers.token,req.body.tenantID)
+        .validateTenantOperator(req.headers.key, req.headers.token,req.body.tenantID)
         .then(() => {
             return new Promise((resolve, reject) => {
                 AttriRelation
@@ -309,7 +309,7 @@ exports.postDeleteAttriRelation = (req,res) => {
     }
 
     SwallowUtil
-        .validateUser(req.headers.phone, req.headers.token)
+        .validateUser(req.headers.key, req.headers.token)
         .then(() => {
             return AttriRelation
                 .destroy({

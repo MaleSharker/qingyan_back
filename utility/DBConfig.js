@@ -449,6 +449,6 @@ exports.Address = () => {
  * @constructor
  */
 exports.ShoppingCart = () => {
-    return sequelize.import(global.apiPathPrefix + 'api/user/models/ShoppingCart')
+    return sequelize.import(global.apiPathPrefix + '/api/user/models/ShoppingCart')
 };
 

@@ -29,7 +29,8 @@ exports.postCreateTenant = (req, res, next) => {
 
     let Tenant = DBConfig.Tenant();
 
-    SwallowUtil.validateUser(req.headers.phone, req.headers.token)
+    SwallowUtil
+        .validateUser(req.headers.key, req.headers.token)
         .then(() => new Bluebird((resolve, reject) => {
             User
                 .findOne({phone:req.headers.phone})
@@ -104,7 +105,7 @@ exports.postCreateTenant = (req, res, next) => {
 exports.postFindTenant = (req, res, next) => {
 
     SwallowUtil
-        .validateUser(req.headers.phone, req.headers.token)
+        .validateUser(req.headers.key, req.headers.token)
         .then(() => {
             return User
                 .findOne({phone:req.headers.phone});
@@ -173,7 +174,8 @@ exports.postUpdateTenant = (req, res, next) => {
 
     let Tenant = DBConfig.Tenant();
 
-    SwallowUtil.validateUser(req.headers.phone, req.headers.token)
+    SwallowUtil
+        .validateUser(req.headers.key, req.headers.token)
         .then(() => {
             return Tenant
                 .findOne({where:{tenant_id:req.body.tenantID}})
@@ -218,7 +220,7 @@ exports.postUploadTenantImage = (req, res, next) => {
     var oldImgName;
     let Tenant = DBConfig.Tenant();
     SwallowUtil
-        .validateUser(req.headers.phone, req.headers.token)
+        .validateUser(req.headers.key, req.headers.token)
         .then(() => {
             return Tenant
                 .findOne({where:{tenant_id:req.body.tenantID}})

@@ -5,6 +5,7 @@
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const User = require(global.apiPathPrefix + '/api/user/models/User');
+const Bluebird = require('bluebird');
 
 const DBConfig = require('./DBConfig');
 
@@ -55,13 +56,13 @@ exports.genToken = (phone) => {
  * @param phone
  * @param token
  */
-exports.validateUser = (userID, token) => new Promise((resolve, reject) => {
+exports.validateUser = (userID, token) => new Bluebird((resolve, reject) => {
     if (userID > 0){
         User
             .findOne({userID:userID})
             .then((user) => {
                 if (token == user.token){
-                    return new Promise((resolve, reject) => {
+                    return new Bluebird((resolve, reject) => {
                         jwt.verify(token,process.env.TOKEN_SECRET, (error, decode) => {
                             if (decode && decode.msg == user.phone){
                                 resolve(user);
@@ -91,15 +92,15 @@ exports.validateUser = (userID, token) => new Promise((resolve, reject) => {
  * @param token
  * @param tenantID
  */
-exports.validateTenantOperator = (phone, token, tenantID) => new Promise((resolve, reject) => {
-    if (verifyPhoneNumber(phone)){
+exports.validateTenantOperator = (userID, token, tenantID) => new Bluebird((resolve, reject) => {
+    if (userID > 0){
          User
-            .findOne({phone:phone})
+            .findOne({userID})
             .then((user) => {
                 if (token == user.token){
-                    return new Promise((resolve, reject) => {
+                    return new Bluebird((resolve, reject) => {
                         jwt.verify(token,process.env.TOKEN_SECRET, (error, decode) => {
-                            if (decode && decode.msg == phone){
+                            if (decode && decode.msg == user.phone){
                                 resolve(user);
                             }else{
                                 reject({error:'Token 验证错误'})

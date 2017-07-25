@@ -27,7 +27,7 @@ exports.postCreateBrand = (req, res, next) => {
     let Brand = DBConfig.Brand();
 
     SwallowUtil
-        .validateUser(req.headers.phone, req.headers.token)
+        .validateUser(req.headers.key, req.headers.token)
         .then(() => {
             return Tenant
                 .findOne({where:{tenant_id: req.body.tenantID}})
@@ -66,7 +66,7 @@ exports.postUpdateBrand = (req, res) => {
 
     let Brand = DBConfig.Brand();
     SwallowUtil
-        .validateUser(req.headers.phone, req.headers.token)
+        .validateUser(req.headers.key, req.headers.token)
         .then(() => {
             return Brand
                 .findOne({where:{brand_id:req.body.brandID}})
@@ -108,7 +108,7 @@ exports.postFindAllBrand = (req,res) => {
     let Brand = DBConfig.Brand();
 
     SwallowUtil
-        .validateUser(req.headers.phone, req.headers.token)
+        .validateUser(req.headers.key, req.headers.token)
         .then(() => {
             return Brand
                 .findAll({where:{tenant_id:req.body.tenantID}})
@@ -141,7 +141,7 @@ exports.postUploadBrandImg = (req, res) => {
     var imgName;
 
     SwallowUtil
-        .validateUser(req.headers.phone, req.headers.token)
+        .validateUser(req.headers.key, req.headers.token)
         .then(() => {
             return Brand
                 .findOne({where:{brand_id:req.body.brandID}})

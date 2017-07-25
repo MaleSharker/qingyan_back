@@ -7,7 +7,7 @@ const path = require('path');
 module.exports = function (app) {
     const userManage = require('../controllers/userManage');
 
-    const passportConfig = require(global.apiPathPrefix + '/config/passport');
+    // const passportConfig = require(global.apiPathPrefix + '/config/passport');
 
     /**
      * 发送验证码

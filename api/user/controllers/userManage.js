@@ -220,59 +220,45 @@ exports.postPhoneSignup = (req, res, next) => {
  */
 exports.postResetPwd = (req, res, next) => {
 
-    const verifyPhone = () => new Promise((resolve, reject) => {
-        if (!SwallowUtil.verifyPhoneNumber(req.body.phone)) {
-            reject({err:'手机号码格式错误'});
-        }else {
-            resolve();
-        }
-    });
+    req.assert('password', 'parameters validate error').notEmpty();
+    // req.assert('').notEmpty();
+    let error = req.validationErrors();
+    if (error){
+        return res.json({status:ErrorList.ErrorType.ParameterError, result:{error}, msg:'parameters validate error'})
+    }
 
-    const verifyToken = () => {
-        return new Promise((resolve, reject) => {
-            jwt.verify(req.headers.token, process.env.TOKEN_SECRET, (err, decode) => {
-                if (err) {
-                    reject({err:err});
+
+    SwallowUtil
+        .validateUser(req.headers.key, req.headers.token)
+        .then((user) => {
+            return new Promise((resolve, reject) => {
+                if (user.password !== undefined){
+                    user.comparePassword(req.body.oldPassword,(error, isMatch) => {
+                        if (isMatch){
+                            resolve(user);
+                        }else {
+                            reject(error);
+                        }
+                    })
                 }else {
-                    if (decode.msg !== req.body.phone) {
-                        reject({err:'token 格式错误,不匹配'});
-                    }else {
-                        resolve();
-                    }
+                    resolve(user);
                 }
             });
-        });
-    };
-
-    const resetPwd = () => {
-        User
-            .findOne({phone:req.body.phone})
-            .then((user) => {
-                if (!user){
-                    res.json({status: ErrorList.ErrorType.DBError, result:{err}, msg:"查无此人"});
-                }
-                user.password = req.body.password;
-                return user.save().then((user) => new Promise((resolve, reject) => {
-                    if (!user){
-                        reject({error: "该号码尚未注册"});
-                    }else {
-                        resolve();
-                    }
-                }));
-
-            });
-    };
-    verifyPhone()
-        .then(verifyToken)
-        .then(resetPwd)
-        .then(() => {
+        })
+        .then((user) => {
+            user.password = req.body.password;
+            return user
+                .save()
+        })
+        .then((user) => {
             if (!res.finished) {
-                res.json({status: 1, result:{}, msg:'重设密码成功'});
+                res.json({status: 1, result:{user}, msg:'重设密码成功'});
             }
         })
         .catch((err) => {
-            // next(err);
-            res.json({status:ErrorList.ErrorType.Error, result:{err}, msg:''});
+            if (!res.finished){
+                res.json({status:ErrorList.ErrorType.Error, result:{err}, msg:''});
+            }
         })
 };
 
@@ -282,52 +268,40 @@ exports.postResetPwd = (req, res, next) => {
  * @param res
  */
 exports.postPhoneLogin = (req, res, next) => {
-    if (!SwallowUtil.verifyPhoneNumber(req.body.phone)){
-        res.json({status: ErrorList.ErrorType.Error,result:{}, msg:'手机号码有误' });
-        return
+
+    req.assert('password','check parameter password').notEmpty().len(32);
+    req.assert('phone','check parameter phone').notEmpty();
+    let errors = req.validationErrors();
+    if (errors){
+        return res.json({status:ErrorList.ErrorType.ParameterError, result:{errors}, msg:'parameters validate error'})
     }
 
-    const findUser = () => new Promise ((resolve, reject) => {
-        return User
-            .findOne({phone: req.body.phone})
-            .then((user) => {
-                user.comparePassword(req.body.password, (error, isMatch) => {
-                    if (!isMatch){
+    User
+        .findOne({
+            phone:req.body.phone
+        })
+        .then((user) => {
+            return new Promise((resolve, reject) => {
+                user.comparePassword(req.body.password,(error, isMatch) => {
+                    if (isMatch){
+                        resolve(user);
+                    }else {
                         reject(error);
                     }
-                    resolve(user);
                 })
-            })
-            .catch((error) => {
-                reject(error);
-            })
-    });
-
-    const saveUser = (user) => {
-        const token = SwallowUtil.genToken(user.phone);
-        user.token = token;
-        return user
-            .save()
-            .then((user) => new Promise((resolve, reject) => {
-                if (!user){
-                    reject();
-                }
-                resolve({token: user.token});
-            }))
-
-    };
-    findUser()
-        .then(saveUser)
-        .then((obj) => {
-            if (obj !== undefined) {
-                res.json({status:ErrorList.ErrorType.Success, result:{obj}, msg:'登录成功'});
-            }else {
-                res.json({status:ErrorList.ErrorType.Error, result:{obj}, msg:"登录失败"})
-            }
+            });
         })
-        .catch((err) => {
+        .then((user) => {
+            user.token = SwallowUtil.genToken(user.phone);
+            return user
+                .save()
+        })
+        .then((user) => {
+            res.json({status:ErrorList.ErrorType.Success, result:{user}, msg:'success'})
+        })
+        .catch((error) => {
             if (!res.finished){
-                res.json({status:ErrorList.ErrorType.Error, result:{err}, msg:'登录失败'});
+                res.json({status:ErrorList.ErrorType.Error, result:{error}, msg:'error'})
             }
         })
 };

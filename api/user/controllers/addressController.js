@@ -17,7 +17,7 @@ let Address = DBConfig.Address();
  */
 exports.postSetAddress = (req, res, next) => {
     //add update del
-    req.assert('actionType','check parameters actiontype').notEmpty();
+    req.assert('actionType','check parameters actiontype').notEmpty().isIn(['add','update','del']);
     if (req.body.actionType == 'add'){
         req.assert('province','check parameter province').notEmpty();
         req.assert('city','check parameter city').notEmpty();
@@ -93,7 +93,6 @@ exports.postSetAddress = (req, res, next) => {
             }
         })
         .then((address) => {
-            console.log('address - - ',address);
             if (req.body.actionType == 'del' || req.body.isDefault == 'false'){
                 return res.json({status: ErrorTypes.Success,result:{address}, msg:'success'})
             }else {
@@ -112,12 +111,10 @@ exports.postSetAddress = (req, res, next) => {
             }
         })
         .then((addresses) => {
-            console.log('1 - - - ');
             var defaultAddr;
             for (var i in addresses){
                 let address = addresses[i];
-                if (address.get('address_id') !== defaultID && address.get('is_default') == 1){
-                    console.log('1 - - - - - ');
+                if (address.get('address_id').toString() !== defaultID.toString() && address.get('is_default') == 1){
                     defaultAddr = address;
                     break
                 }
@@ -158,11 +155,10 @@ exports.postFindAllAddress = (req,res,next) => {
     SwallowUtil
         .validateUser(req.headers.key,req.headers.token)
         .then((user) => {
-            let userID = user.user_id;
             return Address
                 .findAll({
                     where:{
-                        user_id:userID
+                        user_id: user.userID
                     }
                 })
         })

@@ -12,7 +12,7 @@ const Promise = require('bluebird');
 
 exports.postTenantCreateBrand = (req, res, next) => {
 
-    SwallowUtil.validateUser(req.headers.phone, req.headers.token)
+    SwallowUtil.validateUser(req.headers.key, req.headers.token)
         .then(() => new Promise((resolve, reject) => {
             Tenant
                 .findOne({tenantID:req.body.tenantID, ownerID: req.body.userID})

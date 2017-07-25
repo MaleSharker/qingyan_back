@@ -19,7 +19,8 @@ exports.postAddCategory = (req, res, next) => {
 
     const Category = DBConfig.Category();
 
-    SwallowUtil.validateUser(req.headers.phone, req.headers.token)
+    SwallowUtil
+        .validateUser(req.headers.key, req.headers.token)
         .then(() => new Promise((resolve, reject) => {
             Category
                 .findOrCreate({where: { name:req.body.name}})

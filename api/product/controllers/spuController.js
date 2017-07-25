@@ -40,7 +40,7 @@ exports.postCreateSPU = (req, res, next) => {
     let SPU = DBConfig.SPU();
 
     SwallowUtil
-        .validateUser(req.headers.phone, req.headers.token)
+        .validateUser(req.headers.key, req.headers.token)
         .then(() => {
             return Brand
                 .findOne({where:{brand_id:req.body.brandID}})
@@ -91,7 +91,7 @@ exports.postTenantAllSPU = (req,res,next) => {
     let SPU = DBConfig.SPU();
 
     SwallowUtil
-        .validateUser(req.headers.phone, req.headers.token)
+        .validateUser(req.headers.key, req.headers.token)
         .then(() => {
             return Brand
                 .findOne({where:{brand_id:req.body.brandID}})
@@ -136,7 +136,7 @@ exports.postCategoryAllSPU = (req, res, next) => {
 
     let SPU = DBConfig.SPU();
     SwallowUtil
-        .validateUser(req.headers.phone, req.headers.token)
+        .validateUser(req.headers.key, req.headers.token)
         .then(() => {
             return SPU
                 .findAndCount({
@@ -174,7 +174,7 @@ exports.postUploadSPUDetailImages = (req,res,next) => {
     var imgName;
 
     SwallowUtil
-        .validateUser(req.headers.phone, req.headers.token)
+        .validateUser(req.headers.key, req.headers.token)
         .then(() => {
             return SPU
                 .findOne({where:{spu_id: req.headers.spuID}})
@@ -254,7 +254,7 @@ exports.postSPUDetail = (req, res, next) => {
 
     var detailObj = {};
     SwallowUtil
-        .validateTenantOperator(req.headers.phone, req.headers.token, req.body.tenantID)
+        .validateTenantOperator(req.headers.key, req.headers.token, req.body.tenantID)
         .then((tenant) => {
             detailObj.tenant = tenant.toJSON();
             return SPU
@@ -394,7 +394,7 @@ exports.postCreateSKU = (req, res, next) => {
     }
 
     SwallowUtil
-        .validateTenantOperator(req.headers.phone, req.headers.token, req.body.tenantID)
+        .validateTenantOperator(req.headers.key, req.headers.token, req.body.tenantID)
         .then((tenanat) => {
             // console.log('1 - - - ',tenanat);
             return SPU
@@ -441,7 +441,7 @@ exports.postDeleteSKU = (req,res,next) => {
 
 
     SwallowUtil
-        .validateTenantOperator(req.headers.phone, req.headers.token, req.body.tenantID)
+        .validateTenantOperator(req.headers.key, req.headers.token, req.body.tenantID)
         .then(() => {
             return SKU
                 .findOne({

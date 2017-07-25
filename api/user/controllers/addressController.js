@@ -9,33 +9,49 @@ const Bluebird = require('bluebird');
 
 let Address = DBConfig.Address();
 
-exports.addAddress = (req, res, next) => {
+/**
+ * 增删改用户地址
+ * @param req
+ * @param res
+ * @param next
+ */
+exports.postSetAddress = (req, res, next) => {
     //add update del
-    req.assert('actionType','check parameters actiontype').notEmpty().matches(['add','update','del']);
-    if (req.body.actionType == 'add' || req.body.actionType == 'update'){
+    req.assert('actionType','check parameters actiontype').notEmpty();
+    if (req.body.actionType == 'add'){
         req.assert('province','check parameter province').notEmpty();
         req.assert('city','check parameter city').notEmpty();
         req.assert('district', 'check parameter district').notEmpty();
         req.assert('detailAddress', 'check parameter detailAddress').notEmpty();
         req.assert('name', 'check parameter name').notEmpty().len(2,24);
-        req.assert('phone', 'check parameter phone').notEmpty().isMobilePhone();
+        req.assert('phone', 'check parameter phone').notEmpty();
         req.assert('addressType','check parameter addressType').notEmpty();
         req.assert('isDefault', 'check parameter isDefault').notEmpty().isBoolean();
     }else if (req.body.actionType == 'del'){
         req.assert('addressID').notEmpty();
+    }else if (req.body.actionType == 'update'){
+        req.assert('province','check parameter province').notEmpty();
+        req.assert('city','check parameter city').notEmpty();
+        req.assert('district', 'check parameter district').notEmpty();
+        req.assert('detailAddress', 'check parameter detailAddress').notEmpty();
+        req.assert('name', 'check parameter name').notEmpty().len(2,24);
+        req.assert('phone', 'check parameter phone').notEmpty();
+        req.assert('addressType','check parameter addressType').notEmpty();
+        req.assert('isDefault', 'check parameter isDefault').notEmpty().isBoolean();
+        req.assert('addressID','check parameter addressID').notEmpty();
     }else {
         return res.json({status:ErrorTypes.ParameterError, result:{}, msg:'actionType validate error'})
     }
     let errors = req.validationErrors();
     if (errors){
-        return res.json({status: ErrorTypes.ParameterError, result:{}, msg:'parameters validate error'})
+        return res.json({status: ErrorTypes.ParameterError, result:{errors}, msg:'parameters validate error'})
     }
 
     var defaultID;
     SwallowUtil
-        .validateUser(req.headers.phone,req.headers.token)
+        .validateUser(req.headers.key,req.headers.token)
         .then((user) => {
-            let userID = user.user_id;
+            let userID = user.userID;
             if (req.body.actionType == 'add'){
                 return Address.create({
                     user_id: userID,
@@ -77,22 +93,31 @@ exports.addAddress = (req, res, next) => {
             }
         })
         .then((address) => {
+            console.log('address - - ',address);
             if (req.body.actionType == 'del' || req.body.isDefault == 'false'){
-                return res.json({status: ErrorTypes.Success,result:{address}, msg:'delete success'})
+                return res.json({status: ErrorTypes.Success,result:{address}, msg:'success'})
             }else {
-                defaultID = address.get('address_id');
+                if (req.body.actionType == 'add'){
+                    defaultID = address.get('address_id');
+                }else if (req.body.actionType == 'update') {
+                    defaultID = req.body.addressID;
+                }else {
+                    throw new Error();
+                }
                 return Address.findAll({
                     where:{
-                        user_id: address.get('user_id')
+                        user_id: req.headers.key
                     }
                 });
             }
         })
         .then((addresses) => {
+            console.log('1 - - - ');
             var defaultAddr;
             for (var i in addresses){
                 let address = addresses[i];
-                if (address.get('address_id') !== defaultID && address.get('is_default') == 'true'){
+                if (address.get('address_id') !== defaultID && address.get('is_default') == 1){
+                    console.log('1 - - - - - ');
                     defaultAddr = address;
                     break
                 }
@@ -105,13 +130,13 @@ exports.addAddress = (req, res, next) => {
                 });
             }else {
                 if (!res.finished){
-                    return res.json({status:ErrorTypes.Success, result:{}, msg:'success'})
+                    return res.json({status:ErrorTypes.Success, result:{address:defaultAddr}, msg:'success'})
                 }
             }
         })
         .then((address) => {
             if (!res.finished){
-                return res.json({})
+                return res.json({status:ErrorTypes.Success, result:{address}, msg:'success'})
             }
         })
         .catch((errors) => {
@@ -122,3 +147,32 @@ exports.addAddress = (req, res, next) => {
 
 };
 
+/**
+ * 获取用户地址列表
+ * @param req
+ * @param res
+ * @param next
+ */
+exports.postFindAllAddress = (req,res,next) => {
+
+    SwallowUtil
+        .validateUser(req.headers.key,req.headers.token)
+        .then((user) => {
+            let userID = user.user_id;
+            return Address
+                .findAll({
+                    where:{
+                        user_id:userID
+                    }
+                })
+        })
+        .then((addresses) => {
+            res.json({status:ErrorTypes.Success, result:{addresses}, msg:'success'})
+        })
+        .catch((error) => {
+            if (!res.finished) {
+                res.json({status:ErrorTypes.Success, result:{error}, msg:'error'})
+            }
+        })
+
+};

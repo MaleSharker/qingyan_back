@@ -55,15 +55,15 @@ exports.genToken = (phone) => {
  * @param phone
  * @param token
  */
-exports.validateUser = (phone, token) => new Promise((resolve, reject) => {
-    if (verifyPhoneNumber(phone)){
+exports.validateUser = (userID, token) => new Promise((resolve, reject) => {
+    if (userID > 0){
         User
-            .findOne({phone:phone})
+            .findOne({userID:userID})
             .then((user) => {
                 if (token == user.token){
                     return new Promise((resolve, reject) => {
                         jwt.verify(token,process.env.TOKEN_SECRET, (error, decode) => {
-                            if (decode && decode.msg == phone){
+                            if (decode && decode.msg == user.phone){
                                 resolve(user);
                             }else{
                                 reject({error:'Token 验证错误'})
@@ -73,6 +73,9 @@ exports.validateUser = (phone, token) => new Promise((resolve, reject) => {
                 }else {
                     reject({error:'Token 失效'});
                 }
+            })
+            .then((user) => {
+                resolve(user);
             })
             .catch((error) => {
                 reject(error);

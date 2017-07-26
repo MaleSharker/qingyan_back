@@ -2,15 +2,9 @@
  * Created by baichenchen on 2017/7/23.
  */
 
-const DeliverStauts =[
-    'courier_service', //揽件
-    'in_transit',  //在途
-    'puzzled',  //  疑难
-    'signed',   //签收
-    'sign_out', //退签
-    'delivery', //派件
-    'send_back' //退回
-];
+const SwallowConst = require(global.apiPathPrefix + '/utility/SwallowConst');
+
+const DeliverStauts = SwallowConst.DeliverStatus;
 
 const orderDelivery = (sequelize, DataTypes) => {
 

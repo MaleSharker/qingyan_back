@@ -25,7 +25,11 @@ const orderSKU = (sequelize,DataTypes) => {
             allowNull:false
         },
         sku_price:{
-            type:DataTypes.DECIMAL,
+            type:DataTypes.DECIMAL(10,2),
+            allowNull:false
+        },
+        count:{
+            type:DataTypes.INTEGER,
             allowNull:false
         },
         sku_image:{

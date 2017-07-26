@@ -168,7 +168,7 @@ exports.validateSMSDate = (smsDate) => {
 exports.validateContains = (array,item) => {
 
     for (var i in array){
-        let value = array[i]
+        let value = array[i];
         if (value === item){
             return true;
         }
@@ -188,4 +188,26 @@ exports.removeByValue = (array,item) => {
             break;
         }
     }
+};
+
+/**
+ * 获取两个数组的交集
+ * [{}],[{}]
+ * return where array1.name1 == array2.name2
+ * @param array1
+ * @param name1
+ * @param array2
+ * @param name2
+ */
+exports.arrayIntersection = (array1, name1, array2, name2) => {
+    let result = [];
+    array1.map((value1) => {
+        array2.map((value2) => {
+            if (value1[name1] == value2[name2]){
+                result.push(value1);
+            }
+        });
+    });
+    return result;
+
 };

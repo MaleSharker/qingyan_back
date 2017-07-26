@@ -18,7 +18,7 @@ const sku = (sequelize, DataTypes) => {
             defaultValue: ''
         },
         price:{
-            type: DataTypes.DECIMAL(5,2),
+            type: DataTypes.DECIMAL(10,2),
         },
         stock:{
             type:DataTypes.INTEGER,

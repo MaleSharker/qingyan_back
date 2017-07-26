@@ -41,6 +41,9 @@ const attriRoutes = require('./api/product/routes/attributeRoutes');
 const addressRoutes = require('./api/user/routes/addressRoutes');
 const shopCartRoutes = require('./api/user/routes/shopCartRoutes');
 
+//Order
+const orderRoutes = require('./api/order/route/orderRoutes');
+
 /**
  * API keys and Passport configuration
  */
@@ -127,6 +130,8 @@ tenantRoutes(app);
 attriRoutes(app);
 addressRoutes(app);
 shopCartRoutes(app);
+
+orderRoutes(app);
 
 app.use((req, res) => {
     if (!res.finished){

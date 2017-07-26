@@ -2,21 +2,9 @@
  * Created by baichenchen on 2017/7/23.
  */
 
+const SwallowConst = require(global.apiPathPrefix + '/utility/SwallowConst');
 
-const OrderStatus = [
-    'pending',
-    'processing',
-    'canceled',
-    'payment_received',
-    'shipped',
-    'extended',
-    'received',
-    'received_auto',
-    'commented',
-    'retruning',
-    'return_goods_received',
-    'refunded'
-];
+const OrderStatus = SwallowConst.OrderStatus;
 
 const orderModel = (sequelize, DataTypes) => {
 
@@ -30,7 +18,11 @@ const orderModel = (sequelize, DataTypes) => {
         },
         customer_id:{
             type:DataTypes.INTEGER,
-            allowNull: false
+            allowNull: false,
+            defaultValue:''
+        },
+        customer_msg:{
+            type:DataTypes.STRING,
         },
         payment_id:{
             type:DataTypes.INTEGER
@@ -50,7 +42,13 @@ const orderModel = (sequelize, DataTypes) => {
         other_order_details:{
             type:DataTypes.STRING
         },
-
+        order_type:{
+            type: DataTypes.INTEGER,
+            allowNull: false,
+            validate:{
+                isIn:[[1,2]]  //1:直接购买 2:购物车结算
+            }
+        }
     },{
         timestamps: false,
         freezeTableName: true,

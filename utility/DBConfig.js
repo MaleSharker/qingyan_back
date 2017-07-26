@@ -205,7 +205,7 @@ exports.configMysql = () => {
     Order.sync();
 
     Order.hasMany(OrderSKUs,{
-        as:'items',
+        as:'Items',
         foreignKey:'order_id',
         target:'order_id'
     });
@@ -262,6 +262,13 @@ exports.configMysql = () => {
 
 };
 
+/**
+ * 获取 Sequelize 实例
+ * @returns {*}
+ */
+exports.getSequelize = () => {
+    return sequelize;
+};
 
 /**
  * 商铺模型

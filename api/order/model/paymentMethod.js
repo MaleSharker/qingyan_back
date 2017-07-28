@@ -2,16 +2,7 @@
  * Created by cc on 17/7/24.
  */
 
-const channels = [
-    'alipay',
-    'alipay_wap',
-    'alipay_pc_direct',
-    'wx',
-    'wx_wap',
-    'wx_lite',
-    'upacp',
-    'upacp_wap'
-];
+const channels = require(global.apiPathPrefix + '/utility/SwallowConst').Channels;
 
 const paymentMethod = (sequelize,DataTypes) => {
 

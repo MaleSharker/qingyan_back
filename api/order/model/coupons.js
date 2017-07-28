@@ -44,7 +44,7 @@ const coupons = (sequelize,DataTypes) => {
             allowNull:false
         },
         discount:{//折扣价格
-            type:DataTypes.FLOAT,
+            type:DataTypes.DECIMAL(10,2),
             allowNull: false
         },
         minimum_charge:{//满足使用金额

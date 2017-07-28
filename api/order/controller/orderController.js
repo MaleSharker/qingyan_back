@@ -36,9 +36,6 @@ exports.postCreateOrder = (req, res, next) => {
         return res.json({status:ErrorTypes.ParameterError, result:{error}, msg:'parameter validate error'})
     }
 
-    let value = [{skuID:6,count:5}];
-    console.log('1 - - ',JSON.stringify(value));
-
     var tra; //transaction
 
     var skusParameter = JSON.parse(req.body.skus);

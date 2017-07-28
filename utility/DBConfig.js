@@ -77,8 +77,10 @@ exports.configMysql = () => {
     const AttriRelation = sequelize.import(global.apiPathPrefix + '/api/product/models/attriRelation');
 
     //* * * * * */
-    //优惠券
+    //商家优惠券
     const Coupons = sequelize.import(global.apiPathPrefix + '/api/order/model/coupons');
+    //用户优惠券
+    const UserCoupons = sequelize.import(global.apiPathPrefix + '/api/user/models/userCoupons');
     //物流详情
     const LogisticItems = sequelize.import(global.apiPathPrefix + '/api/order/model/logisticItems');
     //货运信息
@@ -239,6 +241,13 @@ exports.configMysql = () => {
 
     ShoppingCart.sync();
 
+    Coupons.hasMany(UserCoupons,{
+        as:'UserCoupons',
+        foreignKey:'coupon_id',
+        target:'coupon_id'
+    });
+    UserCoupons.sync();
+
     // SKU.drop();
     // SPU.drop();
     // Brand.drop();
@@ -388,7 +397,7 @@ exports.AttriRelation = () => {
 };
 
 /**
- * 优惠券
+ * 商家设计优惠券
  * @returns {Model}
  * @constructor
  */
@@ -456,6 +465,14 @@ exports.Address = () => {
  * @constructor
  */
 exports.ShoppingCart = () => {
-    return sequelize.import(global.apiPathPrefix + '/api/user/models/ShoppingCart')
+    return sequelize.import(global.apiPathPrefix + '/api/user/models/ShoppingCart');
 };
 
+/**
+ * 用户优惠券列表
+ * @returns {Model}
+ * @constructor
+ */
+exports.UserCoupons = () => {
+    return sequelize.import(global.apiPathPrefix + '/api/user/models/userCoupons');
+};

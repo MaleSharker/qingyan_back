@@ -23,6 +23,7 @@ const multer = require('multer');
 const DBConfig = require('./utility/DBConfig');
 const upload = multer({ dest: path.join(__dirname, 'uploads')});
 
+
 /**
  * load environment variables
  */
@@ -40,6 +41,7 @@ const attriRoutes = require('./api/product/routes/attributeRoutes');
 
 const addressRoutes = require('./api/user/routes/addressRoutes');
 const shopCartRoutes = require('./api/user/routes/shopCartRoutes');
+const userCouponRoutes = require('./api/user/routes/couponRoutes');
 
 //Order
 const orderRoutes = require('./api/order/route/orderRoutes');
@@ -128,8 +130,10 @@ productRoutes(app);
 userRoutes(app);
 tenantRoutes(app);
 attriRoutes(app);
+
 addressRoutes(app);
 shopCartRoutes(app);
+userCouponRoutes(app);
 
 orderRoutes(app);
 

@@ -27,23 +27,31 @@ const coupons = (sequelize,DataTypes) => {
             type:DataTypes.STRING,
             allowNull:false
         },
-        grant_count:{
+        max_grant_count:{//最大发放数量
+            type:DataTypes.INTEGER,
+            allowNull: false
+        },
+        grant_count:{//发放数量
             type:DataTypes.INTEGER,
             defaultValue:0
         },
-        used_count:{
+        used_count:{//使用数量
             type:DataTypes.INTEGER,
             defaultValue:0
         },
-        expire_date:{
+        expire_date:{//过期时间
             type:DataTypes.DATE,
             allowNull:false
         },
-        discount:{
+        discount:{//折扣价格
             type:DataTypes.FLOAT,
             allowNull: false
         },
-        owner_id:{ //所有者ID ,可以是店铺,用户,订单,SPU
+        minimum_charge:{//满足使用金额
+            type:DataTypes.DECIMAL(10,2),
+            allowNull: false
+        },
+        tenant_id:{ //店铺ID
             type:DataTypes.INTEGER
         }
 

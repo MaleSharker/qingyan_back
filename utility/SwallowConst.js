@@ -62,3 +62,47 @@ const DeliverStatusKeyValue = {
 
 exports.DeliverStatus = DeliverStauts;
 exports.DeliverStatusKeyValue = DeliverStatusKeyValue;
+
+/**
+ * 支付方式
+ */
+const Channels = [
+    'alipay',
+    'alipay_wap',
+    'alipay_pc_direct',
+    'wx',
+    'wx_wap',
+    'wx_lite',
+    'upacp',
+    'upacp_wap'
+];
+const ChannelKeyValues = {
+    alipay:'alipay',
+    alipay_wap:'alipay_wap',
+    alipay_pc_direct:'alipay_pc_direct',
+    wx:'wx',
+    wx_wap:'wx_wap',
+    wx_lite:'wx_lite',
+    upacp:'upacp',
+    upacp_wap:'upacp_wap'
+};
+
+exports.Channels = Channels;
+exports.ChannelKeyValues = ChannelKeyValues;
+
+/**
+ * 优惠券状态
+ */
+const CouponStatus = [
+    'waiting',
+    'using',
+    'used'
+];
+const CouponStatuKeyValues = {
+    waiting:'waiting',
+    using:'using',
+    used:'used'
+};
+
+exports.CouponStatus = CouponStatus;
+exports.CouponStatusKeyValus = CouponStatuKeyValues;

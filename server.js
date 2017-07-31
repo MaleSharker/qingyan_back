@@ -82,7 +82,13 @@ app.use(sass({
 app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(expressValidator());
+app.use(expressValidator({
+    customValidators:{
+        gte:(param,num) => {
+            return param >= num;
+        },
+    }
+}));
 app.use(fileUpload());
 // app.use(session({
 //     resave:true,

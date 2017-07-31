@@ -9,6 +9,8 @@ const Bluebird = require('bluebird');
 
 const DBConfig = require('./DBConfig');
 
+var readFile = Bluebird.promisify(require('fs').readFile);
+
 /**
  * 手机号码校验
  * @param phoneNumber
@@ -93,6 +95,7 @@ exports.validateUser = (userID, token) => new Bluebird((resolve, reject) => {
  * @param tenantID
  */
 exports.validateTenantOperator = (userID, token, tenantID) => new Bluebird((resolve, reject) => {
+
     if (userID > 0){
          User
             .findOne({userID})
@@ -139,6 +142,27 @@ exports.validateTenantOperator = (userID, token, tenantID) => new Bluebird((reso
         reject({error:'token 错误'})
     }
 });
+
+/**
+ * 验证pingpp Webhooks 签名
+ * @param signature
+ * @param rawData
+ * @returns {Promise|Promise.<TResult>|*}
+ */
+exports.validatePingppSignature = (signature, rawData) => {
+    let publicKeyPath = global.apiPathPrefix + '/pingpp_webhook_public_key.pem';
+    return readFile(publicKeyPath,'utf8')
+        .then((contents) => {
+            let verifier = crypto.createVerify('RSA-SHA256').update(rawData,'utf8');
+            return new Bluebird((resolve, reject) => {
+                if (verifier.verify(contents,signature,'base64')){
+                    resolve();
+                }else {
+                    reject({error:'webhooks signature validate error'});
+                }
+            })
+        })
+};
 
 /**
  * 验证码时效检查

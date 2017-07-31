@@ -51,6 +51,7 @@ const DeliverStauts =[
     'send_back' //退回
 ];
 const DeliverStatusKeyValue = {
+    waitDeliver: 'wait_deliver',
     courierService:'courier_service', //揽件
     inTransit:'in_transit',  //在途
     puzzled:'puzzled',  //  疑难

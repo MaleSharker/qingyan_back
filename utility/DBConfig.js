@@ -91,6 +91,8 @@ exports.configMysql = () => {
     const OrderSKUs = sequelize.import(global.apiPathPrefix + '/api/order/model/orderSKU');
     //支付方式
     const Payment = sequelize.import(global.apiPathPrefix + '/api/order/model/paymentMethod');
+    //订单退款记录表
+    const OrderRefunded = sequelize.import(global.apiPathPrefix + '/api/order/model/orderRefunded');
 
     //* * * * - user - * * * * * */
     //地址列表
@@ -234,6 +236,13 @@ exports.configMysql = () => {
         target:'order_id'
     });
     Payment.sync();
+
+    Order.hasOne(OrderRefunded, {
+        as: 'OrderRefunded',
+        foreignKey: 'order_id',
+        target: 'order_id'
+    });
+    OrderRefunded.sync();
 
     Coupons.sync();
 
@@ -449,6 +458,15 @@ exports.OrderSKUs = () => {
  */
 exports.Payment = () => {
     return sequelize.import(global.apiPathPrefix + '/api/order/model/paymentMethod')
+};
+
+/**
+ * 订单退款表
+ * @returns {Model}
+ * @constructor
+ */
+exports.OrderRefunded = () => {
+    return sequelize.import(global.apiPathPrefix + '/api/order/model/orderRefunded');
 };
 
 /**

@@ -20,6 +20,7 @@ const AttriRelation = DBConfig.AttriRelation();
 const AttriChoice = DBConfig.AttriChoice();
 const Attributes = DBConfig.Attribute();
 
+const OrderStatus = SwallowConst.OrderStatus;
 
 /**
  * 创建订单
@@ -327,3 +328,47 @@ exports.postUpdateOrderPrice = (req,res,next) => {
             }
         })
 };
+
+
+/**
+ * 商铺查看订单列表
+ * @param req
+ * @param res
+ * @param next
+ */
+exports.postTenantFindOrderList = (req,res,next) => {
+
+    req.assert('tenantID','check parameter tenantID').isInt();
+    req.assert('page','check parameter page').isInt().gte(0);
+    req.assert('itemsPerPage','check parameter itemsPerPage').isInt().gte(10);
+    req.assert('orderType','check parameter orderType').isString().isIn(OrderStatus);
+    let error = req.validationErrors();
+    if (error){
+        return res.json({status:ErrorTypes.ParameterError, result:{error}, msg:'error'})
+    }
+
+    SwallowUtil
+        .validateTenantOperator(req.headers.key,req.headers.token,req.body.tenantID)
+        .then((tenant) => {
+            return OrderModel
+                .findAndCount({
+                    where:{
+
+                    }
+                })
+        })
+
+
+};
+
+/**
+ * 用户查看订单列表
+ * @param req
+ * @param res
+ * @param next
+ */
+exports.postUserFindOrderList = (req,res,next) => {
+
+};
+
+

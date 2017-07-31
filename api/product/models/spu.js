@@ -29,6 +29,11 @@ const spu = (sequelize, DataTypes) => {
             type: DataTypes.TEXT,
             allowNull: true,
         },
+        sale_count:{
+            type: DataTypes.INTEGER,
+            allowNull: false,
+            defaultValue: 0,
+        },
         status:{
             type:DataTypes.INTEGER,
             defaultValue:1,

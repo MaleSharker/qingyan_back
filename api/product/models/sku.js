@@ -25,6 +25,11 @@ const sku = (sequelize, DataTypes) => {
             allowNull: false,
             defaultValue:0
         },
+        sale_count:{
+            type:DataTypes.INTEGER,
+            allowNull: false,
+            defaultValue: 0
+        },
         name:{
             type:DataTypes.STRING,
             allowNull:false

@@ -174,4 +174,37 @@ exports.postDrawCoupon = (req,res,next) => {
         })
 };
 
+/**
+ * 用户获取个人已领取的优惠券
+ * @param req
+ * @param res
+ * @param next
+ */
+exports.postFindUserCoupons = (req,res,next) => {
 
+    req.assert('tenantID').isInt();
+    let error = req.validationErrors();
+    if (error){
+        return res.json({status:ErrorTypes.ParameterError, result:{error}, msg:'parameters validate error'});
+    }
+
+    SwallowUtil
+        .validateUser(req.headers.key,req.headers.token)
+        .then((user) => {
+            return UserCoupon
+                .findAll({
+                    where:{
+                        user_id: user.userID,
+                        tenant_id: req.body.tenantID,
+                        status: CouponStatus.waiting
+                    }
+                })
+        })
+        .then((coupons) => {
+            res.json({status:ErrorTypes.Success, result:{coupons}, msg:'success'})
+        })
+        .catch((error) => {
+            res.json({status:ErrorTypes.Error, result:{error}, msg:'error'})
+        })
+
+};

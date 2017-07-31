@@ -1,5 +1,5 @@
 /**
- * Created by baichenchen on 2017/7/23.
+ * Created by baichenchen on 2017/7/29.
  */
 
 const CouponTypes = [
@@ -21,11 +21,12 @@ const coupons = (sequelize,DataTypes) => {
         coupon_type:{
             type:DataTypes.ENUM,
             values:CouponTypes,
-            allowNull:false
+            allowNull:false,
+            defaultValue:'tenant'
         },
         coupon_name:{
             type:DataTypes.STRING,
-            allowNull:false
+            allowNull:false,
         },
         max_grant_count:{//最大发放数量
             type:DataTypes.INTEGER,
@@ -53,6 +54,11 @@ const coupons = (sequelize,DataTypes) => {
         },
         tenant_id:{ //店铺ID
             type:DataTypes.INTEGER
+        },
+        is_enabled:{//是否可用
+            type: DataTypes.BOOLEAN,
+            allowNull: false,
+            defaultValue: false
         }
 
     },{

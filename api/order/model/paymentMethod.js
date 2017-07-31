@@ -50,7 +50,7 @@ const paymentMethod = (sequelize,DataTypes) => {
     },{
         timestamps: true,
         freezeTableName: true,
-        tabelName: 'payment_method'
+        tableName: 'payment'
     });
 
     return payment

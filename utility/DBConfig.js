@@ -78,7 +78,7 @@ exports.configMysql = () => {
 
     //* * * * * */
     //商家优惠券
-    const Coupons = sequelize.import(global.apiPathPrefix + '/api/order/model/coupons');
+    const Coupons = sequelize.import(global.apiPathPrefix + '/api/tenants/models/coupons');
     //用户优惠券
     const UserCoupons = sequelize.import(global.apiPathPrefix + '/api/user/models/userCoupons');
     //物流详情
@@ -226,6 +226,7 @@ exports.configMysql = () => {
         target:'deliver_id'
     });
     OrderDelivery.sync();
+    LogisticItems.sync();
 
     Order.hasOne(Payment, {
         as: 'Payment',
@@ -402,7 +403,7 @@ exports.AttriRelation = () => {
  * @constructor
  */
 exports.Coupons = () => {
-    return sequelize.import(global.apiPathPrefix + '/api/order/model/coupons')
+    return sequelize.import(global.apiPathPrefix + '/api/tenants/models/coupons')
 };
 
 /**

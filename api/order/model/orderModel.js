@@ -27,6 +27,16 @@ const orderModel = (sequelize, DataTypes) => {
         payment_id:{
             type:DataTypes.INTEGER
         },
+        total_amount:{
+            type:DataTypes.DECIMAL(10,2),
+            allowNull: false,
+        },
+        user_coupon_id:{// 临时保存,支付成功后据此改变用户优惠券使用情况
+            type:DataTypes.INTEGER,
+        },
+        user_address_id:{//临时保存,支付成功后据此写入deliver
+            type:DataTypes.INTEGER,
+        },
         order_status_code:{
             type:DataTypes.ENUM,
             values:OrderStatus

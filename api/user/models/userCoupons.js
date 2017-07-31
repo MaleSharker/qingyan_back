@@ -24,6 +24,10 @@ const coupons = (sequelize,DataTypes) => {
             type:DataTypes.FLOAT,
             allowNull: false
         },
+        minimum_charge:{//满足使用金额
+            type:DataTypes.DECIMAL(10,2),
+            allowNull: false
+        },
         user_id:{ //所有者ID ,可以是用户,订单,SPU
             type:DataTypes.INTEGER,
             allowNull:false

@@ -20,39 +20,14 @@ const orderModel = (sequelize, DataTypes) => {
             type:DataTypes.INTEGER,
             allowNull: false,
         },
-        tenant_id:{
-            type:DataTypes.INTEGER,
-            allowNull: false,
-        },
         customer_msg:{
             type:DataTypes.STRING,
         },
-        payment_id:{
-            type:DataTypes.INTEGER
+        total_amount:{//订单应付金额,每次支付的时候进行计算
+            type: DataTypes.DECIMAL(10,2),
         },
-        total_amount:{
+        total_amount_settled:{//用户实际支付金额
             type:DataTypes.DECIMAL(10,2),
-            allowNull: false,
-        },
-        refund_amount:{ //申请退款金额
-            type:DataTypes.DECIMAL(10,2)
-        },
-        refund_settled:{ //实际退款金额
-            type:DataTypes.DECIMAL(10,2)
-        },
-        refund_reason:{ //用户退款原因
-            type:DataTypes.STRING
-        },
-        user_coupon_id:{// 临时保存,支付成功后据此改变用户优惠券使用情况
-            type:DataTypes.INTEGER,
-        },
-        user_address_id:{//临时保存,支付成功后据此写入deliver
-            type:DataTypes.INTEGER,
-        },
-        logistics_amount:{ //物流费用
-            type:DataTypes.DECIMAL(10,2),
-            allowNull: false,
-            defaultValue: 10.00,
         },
         order_status_code:{
             type:DataTypes.ENUM,
@@ -66,9 +41,6 @@ const orderModel = (sequelize, DataTypes) => {
         date_order_payed:{
             type:DataTypes.DATE
         },
-        other_order_details:{
-            type:DataTypes.STRING
-        },
         order_type:{
             type: DataTypes.INTEGER,
             allowNull: false,
@@ -79,7 +51,7 @@ const orderModel = (sequelize, DataTypes) => {
     },{
         timestamps: false,
         freezeTableName: true,
-        tableName: 'order_list'
+        tableName: 'user_order_list'
     });
 
     return order;

@@ -12,6 +12,15 @@ const orderSKU = (sequelize,DataTypes) => {
             allowNull:false,
             autoIncrement: true
         },
+        //外键
+        // user_order_id:{
+        //     type:DataTypes.INTEGER,
+        //     allowNull: false
+        // },
+        // tenant_order_id:{
+        //     type: DataTypes.INTEGER,
+        //     allowNull: false
+        // },
         sku_id:{
             type:DataTypes.INTEGER,
             allowNull:false,

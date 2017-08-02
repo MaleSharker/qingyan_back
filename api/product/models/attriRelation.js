@@ -11,7 +11,18 @@ const attriRelation = (sequelize, DataTypes) => {
             primaryKey: true,
             allowNull: true,
             autoIncrement: true
-        }
+        },
+        //外键
+        // choice_id:{
+        //     type:DataTypes.INTEGER
+        // },
+        // sku_id:{
+        //     type:DataTypes.INTEGER
+        // },
+        // attri_id:{
+        //     type:DataTypes.INTEGER
+        // }
+
     }, {
         timestamps: false,
         freezeTableName: true,

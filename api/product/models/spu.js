@@ -39,7 +39,7 @@ const spu = (sequelize, DataTypes) => {
             defaultValue:1,
             allowNull:false,
             validate: {
-                // isIn: [0,1,2,3]
+                // isIn: [0,1,2,3] 0: 下架 ,1: 正常 2: 售光 3: --
                 min: 0,
                 max: 3
             }

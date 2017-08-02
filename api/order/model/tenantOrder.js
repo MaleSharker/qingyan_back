@@ -17,13 +17,6 @@ const tenantOrder = (sequelize,DataTypes) => {
         //     type:DataTypes.INTEGER,
         //     allowNull:false
         // },
-        order_type:{
-            type: DataTypes.INTEGER,
-            allowNull: false,
-            validate:{
-                isIn:[[1,2]]  //1:直接购买 2:购物车结算
-            }
-        },
         customer_id:{
             type:DataTypes.INTEGER,
             allowNull: false,
@@ -31,7 +24,7 @@ const tenantOrder = (sequelize,DataTypes) => {
         customer_msg:{
             type:DataTypes.STRING,
         },
-        total_amount:{//接收到订单支付成功后写入实际支付金额
+        total_amount_settled:{//接收到订单支付成功后写入实际支付金额
             type:DataTypes.DECIMAL(10,2),
             allowNull: false,
         },

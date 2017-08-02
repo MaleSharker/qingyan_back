@@ -12,7 +12,12 @@ const sku = (sequelize, DataTypes) => {
             autoIncrement: true,
             allowNull: true,
         },
-        ske_encode: {
+        on_sale:{
+            type:DataTypes.BOOLEAN,
+            defaultValue: true,
+            allowNull: false
+        },
+        sku_encode: {
             type:DataTypes.STRING,
             allowNull: true,
             defaultValue: ''
@@ -33,7 +38,7 @@ const sku = (sequelize, DataTypes) => {
         name:{
             type:DataTypes.STRING,
             allowNull:false
-        }
+        },
 
     }, {
         timestamps: false,

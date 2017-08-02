@@ -20,9 +20,6 @@ const orderModel = (sequelize, DataTypes) => {
             type:DataTypes.INTEGER,
             allowNull: false,
         },
-        customer_msg:{
-            type:DataTypes.STRING,
-        },
         total_amount:{//订单应付金额,每次支付的时候进行计算
             type: DataTypes.DECIMAL(10,2),
         },

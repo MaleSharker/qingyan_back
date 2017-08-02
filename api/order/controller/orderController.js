@@ -13,6 +13,7 @@ const sequelize = DBConfig.getSequelize();
 const Coupons = DBConfig.Coupons();
 const OrderDelivery = DBConfig.OrderDelivery();
 const OrderModel = DBConfig.OrderModel();
+const TenantOrder = DBConfig.TenantOrder();
 const OrderSKUs = DBConfig.OrderSKUs();
 const Payment = DBConfig.Payment();
 const SKUs = DBConfig.SKU();
@@ -28,38 +29,44 @@ const OrderStatus = SwallowConst.OrderStatus;
  * @param res
  * @param next
  */
+// 开始 --> 检查所提交商品从属关系及商品状态 --> 创建用户订单 --> 创建店铺订单 --> 创建订单商品列表 --> 结束
 exports.postCreateOrder = (req, res, next) => {
 
     req.assert('actionType','check parameter actionType').isInt().isIn([1,2]);  //1 : 直接购买, 2 : 购物车结算
-    req.assert('skus','check parameter skus').notEmpty();  //[{skuID:0, count: 1}]
+    req.assert('skuList','check parameter skus').notEmpty();  //[{tenantID:"",skuID:1, count: 1}]
+    var skusParameter = JSON.parse(req.body.skuList);
     let error = req.validationErrors();
-    if (error){
+    if (error || skusParameter.length > 0){
         return res.json({status:ErrorTypes.ParameterError, result:{error}, msg:'parameter validate error'})
     }
 
-    var tra; //transaction
+    var tra = sequelize.transaction();
 
-    var skusParameter = JSON.parse(req.body.skus);
-    var skusList = [];
     var skuIDs = []; //防重
+    var tenantIDs = [];//商家ID
     var totalPrice = 0.0;
     SwallowUtil
         .validateUser(req.headers.key, req.headers.token)
         .then(() => {
-            return sequelize.transaction({
-                autocommit:true
-            })
-        })
-        .then((trans) => {
-            tra = trans;
-            var skus = [];
-            skusParameter.map((sku) => {
-                if (!SwallowUtil.validateContains(skuIDs,sku.skuID)){
-                    skuIDs.push(sku.skuID);
-                    skus.push(sku);
+
+            return new Bluebird((resolve,reject) => {
+                skusParameter.map((sku) => {
+                    if (!SwallowUtil.validateContains(skuIDs, sku.skuID)){
+                        skuIDs.push(sku.skuID);
+                    }
+                    if (!SwallowUtil.validateContains(tenantIDs, sku.tenantID)){
+                        tenantIDs.push(sku.tenantID);
+                    }
+                });
+                if (skuIDs.length !== skusParameter.length){
+                    reject({error: '含有重复商品,请删除重复商品后重新提交'});
+                }else{
+                    resolve();
                 }
             });
-            skusParameter = skus;
+
+        })
+        .then(() => {
             return SKUs
                 .findAll({
                     where:{
@@ -77,20 +84,18 @@ exports.postCreateOrder = (req, res, next) => {
         })
         .then((skus) => {
             return new Bluebird((resolve,reject) => {
-                var skuJsonList = [];
                 var choiceIDs = []; //属性值ID 列表
                 skus.map((sku) => {
                     let skuJson = sku.toJSON();
                     skusParameter.map((para) => {
                         if (para.skuID == skuJson.sku_id){
-                            if (para.count > skuJson.stock){
-                                reject({error:'库存不足'})
+                            if (para.count > skuJson.stock && skuJson.on_sale){
+                                reject({error:'库存不足',sku:skuJson})
                             }else{
-                                skuJson.count = para.count;
+                                para.sku = skuJson
                             }
                         }
                     });
-                    skuJsonList.push(skuJson);
                     let choices = skuJson.AttriRelations;
                     choices.map((choice) => {
                         if (!SwallowUtil.validateContains(choiceIDs,choice.choice_id)){
@@ -98,7 +103,6 @@ exports.postCreateOrder = (req, res, next) => {
                         }
                     });
                 });
-                skusList = skuJsonList;
                 resolve(choiceIDs);
             });
         })
@@ -118,8 +122,9 @@ exports.postCreateOrder = (req, res, next) => {
                 choicePromises.map((choice) => {
                     attriChoices.push(choice.toJSON())
                 });
-                skusList.map((sku) => {
-                    let skuChoices = sku.AttriRelations;
+
+                skusParameter.map((sku) => {
+                    let skuChoices = sku.sku.AttriRelations;
                     let intersections = SwallowUtil.arrayIntersection(attriChoices,'choice_id',skuChoices,'choice_id');
                     if (intersections.length <= 0){
                         reject({error:'some attrichoice can not be find'});
@@ -130,18 +135,41 @@ exports.postCreateOrder = (req, res, next) => {
                     });
                     sku.attributeDesc = attributeName;
                 });
-                resolve(skusList);
+                resolve();
             });
+            /* - - - - 参数检查完毕 - - - -*/
         })
-        .then((skus) => {
+        .then(() => {
+            /* - - - - 创建用户订单 - - - - */
+            var totalAmount = 0.0;
+            skusParameter.map((paras) => {
+                let price = paras.sku.price;
+                totalAmount += price;
+            });
             return OrderModel
                 .create({
                     customer_id: req.headers.key,
-                    order_status_code:SwallowConst.OrderStatusKeyValue.pending,
+                    total_amount: 0,
+                    order_status_code: SwallowConst.OrderStatusKeyValue.pending,
                     order_type: req.body.actionType
                 },{
                     transaction:tra
                 })
+        })
+        .then((userOrder) => {
+            /* - - - - 创建商家订单 - - - - */
+            //[{tenantID:"",skuID:1, count: 1, sku:{ },attributeDesc:'',}]
+            var list =[];
+            skusParameter.map((parameter) => {
+                var obj = {};
+                obj
+            });
+            return TenantOrder
+                .bulkCreate({
+
+                },{
+                    transaction: tra,
+                });
         })
         .then((order) => {
             var items = [];

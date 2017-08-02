@@ -450,12 +450,21 @@ exports.OrderDelivery = () => {
 };
 
 /**
- * 订单详情
+ * 用户订单详情
  * @returns {Model}
  * @constructor
  */
 exports.OrderModel = () => {
     return sequelize.import(global.apiPathPrefix + '/api/order/model/orderModel')
+};
+
+/**
+ * 商户订单详情
+ * @returns {Model}
+ * @constructor
+ */
+exports.TenantOrder = () => {
+    return sequelize.import(global.apiPathPrefix + '/api/order/model/tenantOrder')
 };
 
 /**

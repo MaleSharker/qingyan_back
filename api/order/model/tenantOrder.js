@@ -2,6 +2,12 @@
  * Created by baichenchen on 2017/8/1.
  */
 
+let SwallowConst = require(global.apiPathPrefix + '/utility/SwallowConst');
+let OrderStatus = SwallowConst.OrderStatus;
+let OrderStatusKV = SwallowConst.OrderStatusKeyValue;
+let SettledStatus = SwallowConst.SettledStatus;
+let SettledStatusKV = SwallowConst.SettledStatusKeyValue;
+
 const tenantOrder = (sequelize,DataTypes) => {
 
     let order = sequelize.define('tenantorder',{
@@ -16,6 +22,10 @@ const tenantOrder = (sequelize,DataTypes) => {
         // user_order_id:{
         //     type:DataTypes.INTEGER,
         //     allowNull:false
+        // },
+        // tenant_id:{
+        //     type: DataTypes.INTEGER,
+        //     allowNull: false
         // },
         customer_id:{
             type:DataTypes.INTEGER,
@@ -50,7 +60,8 @@ const tenantOrder = (sequelize,DataTypes) => {
         },
         order_status_code:{
             type:DataTypes.ENUM,
-            values:OrderStatus
+            values:OrderStatus,
+            defaultValue: OrderStatusKV.pending
         },
         date_order_created:{
             type:DataTypes.DATE,
@@ -60,10 +71,15 @@ const tenantOrder = (sequelize,DataTypes) => {
         date_order_payed:{
             type:DataTypes.DATE
         },
-        tenant_settled_amount:{
+        tenant_settled_amount:{//订单与商铺结算金额
             type: DataTypes.DECIMAL(10,2),
             allowNull:false,
             defaultValue: 0.0
+        },
+        settled_status:{//订单结算状态
+            type: DataTypes.ENUM,
+            values: SettledStatus,
+            defaultValue: SettledStatusKV.pending
         }
 
     },{

@@ -215,6 +215,11 @@ exports.configMysql = () => {
         foreignKey:'user_order_id',
         target: 'order_id'
     });
+    Tenant.hasMany(TenantOrder, {
+        as: 'TenantOrders',
+        foreignKey: 'tenant_id',
+        target: 'tenant_id'
+    });
     TenantOrder.sync();
 
     TenantOrder.hasMany(OrderSKUs,{

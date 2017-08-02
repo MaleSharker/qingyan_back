@@ -38,6 +38,23 @@ exports.OrderStatus = OrderStatus;
 exports.OrderStatusKeyValue = OrderStatusKeyValue;
 
 /**
+ * 商家订单结算状态
+ * @type {string[]}
+ */
+const SettledStatus = [
+    "pending", //待结算
+    "part_settled", //部分结算
+    "total_settled" //全部结算
+];
+const SettledStatusKeyValue = {
+    pending:"pending", //待结算
+    partSettled:"part_settled", //部分结算
+    totalSettled:"total_settled" //全部结算
+};
+exports.SettledStatus = SettledStatus;
+exports.SettledStatusKeyValue = SettledStatusKeyValue;
+
+/**
  * 物流状态
  */
 

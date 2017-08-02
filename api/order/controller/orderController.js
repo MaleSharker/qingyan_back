@@ -22,6 +22,7 @@ const AttriChoice = DBConfig.AttriChoice();
 const Attributes = DBConfig.Attribute();
 
 const OrderStatus = SwallowConst.OrderStatus;
+const SettleStatus = SwallowConst.SettledStatus;
 
 /**
  * 创建订单
@@ -45,6 +46,8 @@ exports.postCreateOrder = (req, res, next) => {
     var skuIDs = []; //防重
     var tenantIDs = [];//商家ID
     var totalPrice = 0.0;
+    var userOrderPro;
+    var tenantOrderPros;
     SwallowUtil
         .validateUser(req.headers.key, req.headers.token)
         .then(() => {
@@ -144,12 +147,12 @@ exports.postCreateOrder = (req, res, next) => {
             var totalAmount = 0.0;
             skusParameter.map((paras) => {
                 let price = paras.sku.price;
-                totalAmount += price;
+                totalAmount += price * paras.count;
             });
             return OrderModel
                 .create({
                     customer_id: req.headers.key,
-                    total_amount: 0,
+                    total_amount: totalAmount,
                     order_status_code: SwallowConst.OrderStatusKeyValue.pending,
                     order_type: req.body.actionType
                 },{
@@ -159,32 +162,52 @@ exports.postCreateOrder = (req, res, next) => {
         .then((userOrder) => {
             /* - - - - 创建商家订单 - - - - */
             //[{tenantID:"",skuID:1, count: 1, sku:{ },attributeDesc:'',}]
+            userOrderPro = userOrder;
             var list =[];
-            skusParameter.map((parameter) => {
-                var obj = {};
-                obj
+            tenantIDs.map((tenantID) => {
+                skusParameter.map((parameter) => {
+                    if (tenantID == parameter.tenantID){
+                        var obj = {};
+                        obj.user_order_id = userOrder.get('order_id');
+                        obj.customer_id = req.headers.key;
+                        obj.tenant_id = parameter.tenantID;
+                        list.push(obj)
+                    }
+                });
             });
             return TenantOrder
                 .bulkCreate({
-
+                    list
                 },{
                     transaction: tra,
                 });
         })
-        .then((order) => {
-            var items = [];
-            skusList.map((sku) => {
+        .then((tenantOrders) => {
+            /* - - - - 创建订单商品列表 - - - - */
+            tenantOrderPros = tenantOrders;
+            var orderItems = [];
+            var logisticAmount = 0.0;
+            skusParameter.map((parameter) => {
                 let item = {};
-                item.sku_id = sku.sku_id;
-                item.sku_name = sku.name;
-                item.sku_attribute = sku.attributeDesc;
-                item.sku_price = sku.price;
-                item.count = sku.count;
-                item.sku_image = '';
-                item.order_id = order.get('order_id');
-                items.push(item);
-                totalPrice += (sku.count).toFixed(2) * sku.price;
+                item.user_order_id = userOrderPro.get('order_id');
+                item.sku_id = parameter.sku.sku_id;
+                item.sku_name = parameter.sku.name;
+                item.sku_attribute = parameter.attributeDesc;
+                item.sku_price = parameter.sku.price;
+                item.count = parameter.count;
+                tenantOrders.map((tenantOrder) => {
+                    if (tenantOrder.get('tenant_id') == parameter.tenantID){
+                        item.tenant_order_id = tenantOrder.get('tenant_order_id')
+                    }
+                });
+                orderItems.push(item);
+                totalPrice += item.sku_price * item.count;
             });
+            logisticAmount = 0.0;
+            tenantOrders.map((tenantOrder) => {
+                logisticAmount += tenantOrder.get('logistics_amount');
+            });
+            totalPrice += logisticAmount;
             return OrderSKUs
                 .bulkCreate(
                     items
@@ -216,6 +239,7 @@ exports.postCreateOrder = (req, res, next) => {
 exports.postUpdateOrderCount = (req, res, next) => {
 
     req.assert('orderID','check parameter orderID').isInt();
+    req.assert('tenantOrderID','check parameter tenantOrderID').isInt();
     req.assert('skuID','check parameter skuID').isInt();
     req.assert('count','check parameter count').isInt();
     let error = req.validationErrors();
@@ -223,47 +247,35 @@ exports.postUpdateOrderCount = (req, res, next) => {
         return res.json({status:ErrorTypes.ParameterError, result:{error}, msg:''})
     }
 
+    var logisticAmount = 0.0; //订单总费用
     SwallowUtil
         .validateUser(req.headers.key, req.headers.token)
         .then((user) => {
-            return OrderModel
-                .findOne({
-                    where:{
-                        customer_id: user.userID,
-                        order_id: req.body.orderID
-                    },
-                    include:[
-                        {
-                            model:OrderSKUs,
-                            as: 'Items'
-                        }
-                    ]
-                })
-        })
-        .then((orderModel) => {
-            let order = orderModel.toJSON();
-            return new Bluebird((resolve,reject) => {
-                order.Items.map((item) => {
-                    if (item.sku_id == req.body.skuID){
-                        resolve()
-                    }
-                });
-                reject({error: '商品未包含在该订单内'})
-            });
-        })
-        .then(() => {
             return OrderSKUs
                 .update({
                     count:req.body.count
                 },{
                     where:{
-                        order_id: req.body.orderID,
+                        user_order_id: req.body.orderID,
+                        tenant_order_id: req.body.tenantOrderID,
                         sku_id: req.body.skuID
                     },
                     fields:['count']
                 })
         })
-        .then((orderSKU) => {
+        .then(() => {
+            return TenantOrder
+                .findAll({
+                    where:{
+                        user_order_id: req.body.orderID,
+                    }
+                })
+        })
+        .then((tenantOrders) => {
+            logisticAmount = 0.0;
+            tenantOrders.map((order) => {
+                logisticAmount += order.get('logistics_amount');
+            });
             return OrderSKUs
                 .findAll({
                     where:{
@@ -278,7 +290,7 @@ exports.postUpdateOrderCount = (req, res, next) => {
                 let price = item.get('sku_price');
                 totalPrice += count * price;
             });
-            res.json({status:ErrorTypes.Success, result:{price:totalPrice.toFixed(2)}, msg:'success'})
+            res.json({status:ErrorTypes.Success, result:{totalPrice:totalPrice.toFixed(2)}, msg:'success'})
         })
         .catch((error) => {
             if (!res.finished){
@@ -290,16 +302,16 @@ exports.postUpdateOrderCount = (req, res, next) => {
 
 
 /**
- * 管理员 - 修改订单商品价格
+ * 管理员 - 修改订单商品单价
  * @param req
  * @param res
  * @param next
  */
-exports.postUpdateOrderPrice = (req,res,next) => {
+exports.postTenantUpdateOrderPrice = (req,res,next) => {
 
     req.assert('tenantID', 'check parameter tenantID').isInt();
-    req.assert('customerID','check parameter customerID').isInt();
     req.assert('orderID','check parameter orderID').isInt();
+    req.assert('tenantOrderID', 'check parameter tenantOrderID').isInt();
     req.assert('skuID','check parameter skuID').isInt();
     req.assert('price','check parameter price').isDecimal();
     let error = req.validationErrors();
@@ -309,40 +321,15 @@ exports.postUpdateOrderPrice = (req,res,next) => {
 
     SwallowUtil
         .validateTenantOperator(req.headers.key, req.headers.token, req.body.tenantID)
-        .then((tenant) => {
-            return OrderModel
-                .findOne({
-                    where:{
-                        customer_id: req.body.customerID,
-                        order_id: req.body.orderID
-                    },
-                    include:[
-                        {
-                            model:OrderSKUs,
-                            as: 'Items'
-                        }
-                    ]
-                })
-        })
-        .then((orderModel) => {
-            let order = orderModel.toJSON();
-            return new Bluebird((resolve,reject) => {
-                order.Items.map((item) => {
-                    if (item.sku_id == req.body.skuID){
-                        resolve()
-                    }
-                });
-                reject({error: '商品未包含在该订单内'})
-            });
-        })
         .then(() => {
             return OrderSKUs
                 .update({
                     sku_price:req.body.price
                 },{
                     where:{
-                        order_id: req.body.orderID,
-                        sku_id: req.body.skuID
+                        tenant_order_id: req.body.tenantOrderID,
+                        user_order_id: req.body.orderID,
+                        sku_id: req.body.skuID,
                     },
                     fields:['sku_price']
                 })
@@ -353,6 +340,46 @@ exports.postUpdateOrderPrice = (req,res,next) => {
         .catch((error) => {
             if (!res.finished){
                 res.json({status:ErrorTypes.Error, result:{error}, msg:'error'})
+            }
+        })
+};
+
+/**
+ * 管理员 - 修改订单物流费用
+ * @param req
+ * @param res
+ * @param next
+ */
+exports.postTenantUpdateOrderLogistic = (req,res,next) => {
+
+    req.assert('tenantID','check parameter tenantID').isInt();
+    req.assert('tenantOrderID', 'check parameter tenantOrderID').isInt();
+    req.assert('logisticPrice','check parameter logisticPrice').isInt();
+    let error = req.validationErrors();
+    if (error){
+        return res.json({status:ErrorTypes.ParameterError, result:{error}, msg:'Parameters validate error'})
+    }
+
+    SwallowUtil
+        .validateTenantOperator(req.headers.key,req.headers.token,req.body.tenantID)
+        .then((tenant) => {
+            return TenantOrder
+                .update({
+                    logistics_amount: req.body.logisticPrice
+                },{
+                    fields:['logistics_amount'],
+                    where:{
+                        tenant_order_id: req.body.tenantOrderID,
+                        tenant_id: tenant.get('tenant_id')
+                    }
+                })
+        })
+        .then((updated) => {
+            res.json({status:ErrorTypes.Success, result:{updated}, msg:'success'})
+        })
+        .catch((error) => {
+            if (!res.finished){
+                return res.json({status:ErrorTypes.Error, result:{error}, msg:'error'})
             }
         })
 };
@@ -370,22 +397,40 @@ exports.postTenantFindOrderList = (req,res,next) => {
     req.assert('page','check parameter page').isInt().gte(0);
     req.assert('itemsPerPage','check parameter itemsPerPage').isInt().gte(10);
     req.assert('orderType','check parameter orderType').isString().isIn(OrderStatus);
+    req.assert('settleStatus','check parameter settleStatus').isString().isIn(SettleStatus);
     let error = req.validationErrors();
     if (error){
         return res.json({status:ErrorTypes.ParameterError, result:{error}, msg:'error'})
     }
-
     SwallowUtil
         .validateTenantOperator(req.headers.key,req.headers.token,req.body.tenantID)
         .then((tenant) => {
-            return OrderModel
+            return TenantOrder
                 .findAndCount({
                     where:{
-
-                    }
+                        tenant_id: req.body.tenantID,
+                        order_status_code: req.body.orderType,
+                        settled_status: req.body.settleStatus
+                    },
+                    limit: req.body.itemsPerPage,
+                    offset: req.body.page * req.body.itemsPerPage,
+                    include:[
+                        {
+                            model: OrderSKUs,
+                            as: 'Items',
+                            required: true
+                        }
+                    ]
                 })
         })
-
+        .then((orderList) => {
+            res.json({status:ErrorTypes.Success, result:{orderList}, msg:'success'})
+        })
+        .catch((error) => {
+            if (!res.finished){
+                res.json({status:ErrorTypes.Error, result:{error}, msg:'error'})
+            }
+        })
 
 };
 
@@ -396,6 +441,20 @@ exports.postTenantFindOrderList = (req,res,next) => {
  * @param next
  */
 exports.postUserFindOrderList = (req,res,next) => {
+
+    req.assert('orderStatus','check parameters orderStatus').notEmpty();
+    let error = req.validationErrors();
+    let paraJson = JSON.parse(req.body.orderStatus);
+    if (error && paraJson.length > 0){
+        return res.json({status:ErrorTypes.ParameterError, result:{error}, msg:'parameters validate error'})
+    }
+
+    SwallowUtil
+        .validateUser(req.headers.key,req.headers.token)
+        .then()
+        .catch(() => {
+
+        })
 
 };
 

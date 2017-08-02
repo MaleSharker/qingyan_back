@@ -17,6 +17,11 @@ const orderRefund = (sequelize,DataTypes) => {
         refund_id:{
             type:DataTypes.STRING
         },
+        //外键
+        // tenant_order_id:{
+        //     type: DataTypes.INTEGER,
+        //     allowNull:false
+        // },
         refund_created: {
             type: DataTypes.INTEGER
         },

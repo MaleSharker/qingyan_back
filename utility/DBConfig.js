@@ -85,14 +85,16 @@ exports.configMysql = () => {
     const LogisticItems = sequelize.import(global.apiPathPrefix + '/api/order/model/logisticItems');
     //货运信息
     const OrderDelivery = sequelize.import(global.apiPathPrefix + '/api/order/model/orderDelivery');
-    //订单
+    //用户订单
     const Order = sequelize.import(global.apiPathPrefix + '/api/order/model/orderModel');
+    //订单退款记录表
+    const OrderRefunded = sequelize.import(global.apiPathPrefix + '/api/order/model/orderRefunded');
     //订单商品表
     const OrderSKUs = sequelize.import(global.apiPathPrefix + '/api/order/model/orderSKU');
     //支付方式
     const Payment = sequelize.import(global.apiPathPrefix + '/api/order/model/paymentMethod');
-    //订单退款记录表
-    const OrderRefunded = sequelize.import(global.apiPathPrefix + '/api/order/model/orderRefunded');
+    //商家订单列表
+    const TenantOrder = sequelize.import(global.apiPathPrefix + '/api/order/model/tenantOrder');
 
     //* * * * - user - * * * * * */
     //地址列表
@@ -208,11 +210,25 @@ exports.configMysql = () => {
     /* * * * * * * * */
     Order.sync();
 
+    Order.hasMany(TenantOrder, {
+        as:'TenantOrders',
+        foreignKey:'user_order_id',
+        target: 'order_id'
+    });
+    TenantOrder.sync();
+
+    TenantOrder.hasMany(OrderSKUs,{
+        as:'Items',
+        foreignKey: 'tenant_order_id',
+        target:'tenant_order_id'
+    });
+
     Order.hasMany(OrderSKUs,{
         as:'Items',
-        foreignKey:'order_id',
+        foreignKey:'user_order_id',
         target:'order_id'
     });
+
     OrderSKUs.sync();
 
     Order.hasOne(OrderDelivery,{
@@ -237,10 +253,10 @@ exports.configMysql = () => {
     });
     Payment.sync();
 
-    Order.hasOne(OrderRefunded, {
+    TenantOrder.hasOne(OrderRefunded, {
         as: 'OrderRefunded',
-        foreignKey: 'order_id',
-        target: 'order_id'
+        foreignKey: 'tenant_order_id',
+        target: 'tenant_order_id'
     });
     OrderRefunded.sync();
 

@@ -11,6 +11,11 @@ const logisticItems = (sequelize,DataTypes) => {
             primaryKey:true,
             autoIncrement: true
         },
+        //外键
+        // deliver_id:{
+        //     type: DataTypes.INTEGER,
+        //     allowNull: false
+        // },
         time:{
             type:DataTypes.STRING
         },

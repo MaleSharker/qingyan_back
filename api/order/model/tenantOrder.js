@@ -1,7 +1,6 @@
 /**
- * Created by YCYL on 2017/8/1.
+ * Created by baichenchen on 2017/8/1.
  */
-
 
 const tenantOrder = (sequelize,DataTypes) => {
 
@@ -13,10 +12,11 @@ const tenantOrder = (sequelize,DataTypes) => {
             autoIncrement: true,
             allowNull: false
         },
-        user_order_id:{
-            type:DataTypes.INTEGER,
-            allowNull:false
-        },
+        //外键
+        // user_order_id:{
+        //     type:DataTypes.INTEGER,
+        //     allowNull:false
+        // },
         order_type:{
             type: DataTypes.INTEGER,
             allowNull: false,
@@ -82,4 +82,3 @@ const tenantOrder = (sequelize,DataTypes) => {
 };
 
 module.exports = tenantOrder;
-

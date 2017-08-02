@@ -15,6 +15,11 @@ const orderDelivery = (sequelize, DataTypes) => {
             primaryKey: true,
             autoIncrement:true
         },
+        //外键
+        // tenant_order_id:{
+        //     type: DataTypes.INTEGER,
+        //     allowNull: false
+        // },
         logistic_status:{
             type:DataTypes.ENUM,
             values:DeliverStauts

@@ -17,6 +17,11 @@ const paymentMethod = (sequelize,DataTypes) => {
         channel_id:{
             type:DataTypes.STRING,
         },
+        //外键
+        // user_order_id:{
+        //     type:DataTypes.INTEGER,
+        //     allowNull: false
+        // },
         object:DataTypes.STRING,
         created: DataTypes.BIGINT,
         liveModel: DataTypes.BOOLEAN,

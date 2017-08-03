@@ -229,7 +229,6 @@ exports.postCreateOrder = (req, res, next) => {
 
 };
 
-
 /**
  * 修改订单中商品数量
  * @param req
@@ -410,7 +409,9 @@ exports.postTenantFindOrderList = (req,res,next) => {
                     where:{
                         tenant_id: req.body.tenantID,
                         order_status_code: req.body.orderType,
-                        settled_status: req.body.settleStatus
+                        settled_status: {
+                            $in:req.body.settleStatus
+                        }
                     },
                     limit: req.body.itemsPerPage,
                     offset: req.body.page * req.body.itemsPerPage,
@@ -443,17 +444,40 @@ exports.postTenantFindOrderList = (req,res,next) => {
 exports.postUserFindOrderList = (req,res,next) => {
 
     req.assert('orderStatus','check parameters orderStatus').notEmpty();
+    req.assert('page','check parameters page').isInt().gte(0);
+    req.assert('itemsPerPage','check parameter itemsPerPage').isInt().gte(10);
     let error = req.validationErrors();
     let paraJson = JSON.parse(req.body.orderStatus);
-    if (error && paraJson.length > 0){
+    if (error || paraJson.length == 0){
         return res.json({status:ErrorTypes.ParameterError, result:{error}, msg:'parameters validate error'})
     }
 
     SwallowUtil
         .validateUser(req.headers.key,req.headers.token)
-        .then()
-        .catch(() => {
-
+        .then((user) => {
+            return OrderModel
+                .findAndCount({
+                    where:{
+                        customer_id:user.userID,
+                        order_type:{
+                            $in:paraJson
+                        }
+                    },
+                    limit:req.body.itemsPerPage,
+                    offset:req.body.page * req.body.itemsPerPage,
+                    include:[{
+                        model:OrderSKUs,
+                        as:'Items'
+                    }]
+                })
+        })
+        .then((orders) => {
+            res.json({status:ErrorTypes.Success, result:{orders}, msg:'success'})
+        })
+        .catch((error) => {
+            if (!res.finished){
+                res.json({status:ErrorTypes.Success, result:{error}, msg:'error'})
+            }
         })
 
 };

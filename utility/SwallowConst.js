@@ -114,12 +114,14 @@ exports.ChannelKeyValues = ChannelKeyValues;
 const CouponStatus = [
     'waiting',
     'using',
-    'used'
+    'used',
+    'wasted' //失效
 ];
 const CouponStatuKeyValues = {
-    waiting:'waiting',
-    using:'using',
-    used:'used'
+    waiting: 'waiting',
+    using: 'using',
+    used: 'used',
+    wasted: 'wasted' //失效
 };
 
 exports.CouponStatus = CouponStatus;

@@ -13,6 +13,7 @@ pingpp.setPrivateKeyPath(global.apiPathPrefix + "/pingpp_rsa_private_key.pem");
 
 const sequelize = DBConfig.getSequelize();
 const OrderModel = DBConfig.OrderModel();
+const TenantOrder = DBConfig.TenantOrder();
 const OrderSKUs = DBConfig.OrderSKUs();
 const Coupons = DBConfig.Coupons();
 const UserCoupons = DBConfig.UserCoupons();
@@ -23,7 +24,7 @@ const Address = DBConfig.Address();
 
 const OrderStatus = SwallowConst.OrderStatusKeyValue;
 const DeliverStauts = SwallowConst.DeliverStatusKeyValue;
-const CouponStatusKV = require(global.apiPathPrefix + '/utility/SwallowConst').CouponStatusKeyValus;
+const CouponStatusKV = SwallowConst.CouponStatusKeyValus;
 const PaymentChannels = require(global.apiPathPrefix + '/utility/SwallowConst').Channels;
 
 var requestModel = {
@@ -51,7 +52,7 @@ var requestModel = {
 exports.postPayOrder = (req, res, next) => {
 
     req.assert('userID','check parameter userID').notEmpty();
-    // req.assert('userCouponID','check parameter userCouponID').notEmpty();
+    // req.assert('userCoupons','check parameter userCouponID').notEmpty(); [{tenantID:'', userCouponID:'', couponID:'' }]
     req.assert('addressID','check parameter addressID').notEmpty();
     req.assert('paymentType','check parameter paymentType').notEmpty().isIn(PaymentChannels);
     req.assert('orderID','check parameter orderID').notEmpty();
@@ -63,7 +64,8 @@ exports.postPayOrder = (req, res, next) => {
     var tra = sequelize.transaction();
 
     var orderModel;
-    var couponModel;
+    var tenantOrdersJson;
+    var couponsModel;
     var addressModel;
     var moneyObj;
     var chargeObj;
@@ -71,6 +73,7 @@ exports.postPayOrder = (req, res, next) => {
     SwallowUtil
         .validateUser(req.headers.key,req.headers.token)
         .then((user) => {
+            //验证订单ID 无误
             return OrderModel
                 .findOne({
                     where:{
@@ -79,8 +82,14 @@ exports.postPayOrder = (req, res, next) => {
                     },
                     include:[
                         {
-                            model: OrderSKUs,
-                            as: 'Items'
+                            model: TenantOrder,
+                            as: 'TenantOrders',
+                            include: [
+                                {
+                                    model: OrderSKUs,
+                                    as: 'Items'
+                                },
+                            ]
                         }
                     ],
                     transaction: tra
@@ -88,6 +97,7 @@ exports.postPayOrder = (req, res, next) => {
         })
         .then((order) => {
             orderModel = order;
+            //验证地址
             return Address
                 .findOne({
                     where:{
@@ -99,14 +109,33 @@ exports.postPayOrder = (req, res, next) => {
         })
         .then((address) => {
             addressModel = address;
-            return new Bluebird((resolve, reject) => {
-                if (req.body.userCouponID.length == 0 || req.body.userCouponID == undefined){
+            var couponsJsonArr = JSON.parse(req.body.userCoupons);
+            //为对应商铺绑定对应优惠码 并 获取所有优惠码信息
+            return Bluebird((resolve, reject) => {
+                if (couponsJsonArr.length == 0 || couponsJsonArr == undefined){
                     resolve()
                 }else {
+                    let userCouponIDs = [];
+                    let orderJson = orderModel.toJSON();
+                    tenantOrdersJson = orderJson.TenantOrders;
+                    //{tenantID:'', userCouponID:'', couponID:'' }
+                    couponsJsonArr.map((userCoupon) => {
+                        if (!SwallowUtil.validateContains(userCouponIDs, userCoupon.userCouponID)){
+                            userCouponIDs.push(userCoupon.userCouponID);
+                            tenantOrdersJson.map((tenantOrder) => {
+                                if (tenantOrder.tenant_id == userCoupon.tenantID){
+                                    tenantOrder.user_coupon_id = userCoupon.userCouponID;
+                                }
+                            });
+                        }
+                    });
+
                     UserCoupons
-                        .findOne({
+                        .findAll({
                             where:{
-                                user_coupon_id:req.body.couponID,
+                                user_coupon_id:{
+                                    $in: userCouponIDs
+                                },
                                 user_id:req.headers.key
                             },
                             transaction: tra
@@ -120,46 +149,75 @@ exports.postPayOrder = (req, res, next) => {
                 }
             });
         })
-        .then((coupon) => {
-            if (coupon){
-                couponModel = coupon;
-            }
-            //订单总价核算
-            return new Bluebird((resolve, reject) => {
-                let skus = orderModel.get('Items');
-                var money = 0.0;
-                skus.map((sku) => {
-                    let price = sku.get('sku_price');
-                    let count = sku.get('count');
-                    money += price * count;
-                }); //商品总价
-                money += orderModel.get('logistics_amount'); //物流费用
-                if (coupon){
-                    let discount = coupon.get('discount');
-                    let minCharge = coupon.get('minimum_charge');
-                    if (money >= minCharge){
-                        money -= discount; //优惠券
-                        resolve({money});
-                    }else {
-                        reject({error:'优惠券不可用'});
+        .then((coupons) => {
+            return new Bluebird((resolve,reject) => {
+                var totalAmount = 0.0; //订单要支付的总金额
+                tenantOrdersJson.map((tenantOrder) => {
+                    var tempAmount = 0.0;
+                    tenantOrder.Items.map((orderSku) => {
+                        tempAmount += orderSku.count * orderSku.sku_price;
+                    });
+                    let userCouponID = tenantOrder.user_coupon_id;
+                    if (userCouponID !== null || userCouponID !== undefined){
+                        coupons.map((userCoupon) => {
+                            let couponID = userCoupon.get('user_coupon_id');
+                            if (userCouponID == couponID) {
+                                let status = userCoupon.get('status');
+                                let expireTime = userCoupon.get('expire_date').getTime();
+                                if (status == CouponStatusKV.waiting && expireTime > (new Date()).getTime()){
+                                    let minAmount = userCoupon.get('minimum_charge');
+                                    let discount = userCoupon.get('discount');
+                                    if (tempAmount >= minAmount){
+                                        tempAmount -= discount;
+                                    }else {
+                                        reject({error:'未能达到使用优惠券的金额'});
+                                    }
+                                }else {
+                                    reject({error:'优惠券已经使用过或者已经过期'})
+                                }
+                            }
+                        });
                     }
-                }else{
-                    resolve({money})
-                }
+                    tempAmount += tenantOrder.logistics_amount;
+                    totalAmount += tempAmount;
+                });
+                resolve({money: totalAmount});
             });
         })
         .then((obj) => {
             moneyObj = obj;
+            //更新用户订单表
             return orderModel
                 .update({
-                    user_coupon_id: couponModel == undefined ? null : couponModel.get('coupon_id'),
-                    user_address_id: req.body.addressID
+                    total_amount: obj.money,
                 },{
-                    fields:['user_coupon_id','user_address_id'],
+                    fields:['total_amount'],
                     transaction: tra
                 });
         })
         .then((update) => {
+            //更新商户订单表
+            var promiseList = [];
+            tenantOrdersJson.map((tenantOrder) => {
+                if (!SwallowUtil.validateContains(tempOrderIDs, tenantOrder.tenant_order_id)){
+                    promiseList.push(
+                        TenantOrder
+                            .update({
+                                user_address_id: req.body.addressID,
+                                user_coupon_id: tenantOrder.tenant_order_id
+                            },{
+                                where:{
+                                    tenant_order_id: tenantOrder.tenant_order_id
+                                },
+                                transaction: tra
+                            })
+                    )
+                }
+            });
+            return Bluebird.all(promiseList);
+        })
+        .then((update) => {
+            //向Pingpp请求支付对象
             return new Bluebird((resolve,reject) => {
                 if (moneyObj.money <= 0){
                     reject({error:'订单价格有误'})
@@ -181,7 +239,7 @@ exports.postPayOrder = (req, res, next) => {
                 }
             });
         })
-        .timeout(1000 * 10)
+        .timeout(1000 * 10) //10 秒无响应就取消
         .then((charge) => {
             chargeObj = charge;
             return Payment

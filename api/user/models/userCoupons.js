@@ -16,6 +16,11 @@ const coupons = (sequelize,DataTypes) => {
             type:DataTypes.STRING,
             allowNull:false
         },
+        // 外键
+        // coupon_id:{
+        //     type: DataTypes.INTEGER,
+        //     allowNull: false
+        // },
         expire_date:{//过期时间
             type:DataTypes.DATE,
             allowNull:false

@@ -236,10 +236,10 @@ exports.configMysql = () => {
 
     OrderSKUs.sync();
 
-    Order.hasOne(OrderDelivery,{
+    TenantOrder.hasOne(OrderDelivery,{
         as:'delivery',
-        foreignKey:'order_id',
-        target:'order_id'
+        foreignKey:'tenant_order_id',
+        target:'tenant_order_id'
     });
     OrderDelivery.sync();
 

@@ -25,6 +25,7 @@ const Address = DBConfig.Address();
 const OrderStatus = SwallowConst.OrderStatusKeyValue;
 const DeliverStauts = SwallowConst.DeliverStatusKeyValue;
 const CouponStatusKV = SwallowConst.CouponStatusKeyValus;
+const DeliverStatusKV = SwallowConst.DeliverStatusKeyValue;
 const PaymentChannels = require(global.apiPathPrefix + '/utility/SwallowConst').Channels;
 
 var requestModel = {
@@ -179,6 +180,7 @@ exports.postPayOrder = (req, res, next) => {
                         });
                     }
                     tempAmount += tenantOrder.logistics_amount;
+                    tenantOrder.totalAmount = tempAmount;
                     totalAmount += tempAmount;
                 });
                 resolve({money: totalAmount});
@@ -204,7 +206,8 @@ exports.postPayOrder = (req, res, next) => {
                         TenantOrder
                             .update({
                                 user_address_id: req.body.addressID,
-                                user_coupon_id: tenantOrder.tenant_order_id
+                                user_coupon_id: tenantOrder.tenant_order_id,
+                                total_amount: tenantOrder.totalAmount
                             },{
                                 where:{
                                     tenant_order_id: tenantOrder.tenant_order_id
@@ -300,6 +303,7 @@ exports.postPayOrder = (req, res, next) => {
 exports.postApplyRefundOrder = (req, res, next) => {
 
     req.assert('orderID','check parameter orderID').isInt();
+    req.assert('tenantUserID','check parameter tenantUserID').notEmpty();
     req.assert('refundAmount', 'check parameter refundAmount').isFloat();
     req.assert('reason','check parameter reason').notEmpty();
     let error = req.validationErrors();
@@ -307,17 +311,21 @@ exports.postApplyRefundOrder = (req, res, next) => {
         return res.json({status:ErrorTypes.ParameterError, result:{error}, msg:'parameters validate error'})
     }
 
+    var userOrderID;
+
     SwallowUtil
         .validateUser(req.headers.key, req.headers.token)
         .then((user) => {
-            return OrderModel
+            return TenantOrder
                 .findOne({
                     where:{
-                        order_id: req.body.orderID
+                        user_order_id: req.body.orderID,
+                        tenant_order_id: req.body.tenantUserID
                     }
                 })
         })
         .then((order) => {
+            userOrderID = order.get('user_order_id');
             return order
                 .update({
                     refund_amount: req.body.refundAmount,
@@ -325,6 +333,16 @@ exports.postApplyRefundOrder = (req, res, next) => {
                     order_status_code: OrderStatus.retruning
                 },{
                     fields:['refund_amount','refund_reason','order_status_code']
+                })
+        })
+        .then(() => {
+            return OrderModel
+                .update({
+                    order_status_code: OrderStatus.retruning
+                },{
+                    where: {
+                        order_id: userOrderID,
+                    }
                 })
         })
         .then((updated) => {
@@ -346,7 +364,8 @@ exports.postApplyRefundOrder = (req, res, next) => {
 exports.postTenantRefundOrder = (req, res, next) => {
 
     req.assert('tenantID','check parameter tenantID').isInt();
-    req.assert('orderID','check parameter orderID').isInt();
+    req.assert('password','check parameter parameter').isString().len(32);
+    req.assert('tenantOrderID','check parameter orderID').isInt();
     req.assert('refundAmount', 'check parameter refundAmount').isFloat();
     let error = req.validationErrors();
     if (error){
@@ -355,21 +374,37 @@ exports.postTenantRefundOrder = (req, res, next) => {
 
     SwallowUtil
         .validateTenantOperator(req.headers.key,req.headers.token, req.body.tenantID)
-        .then((tenant) => {
-            return Payment
+        .then(() => {
+            return SwallowUtil
+                .validateUser(req.headers.key, req.headers.token)
+        })
+        .then((user) => {
+            return new Bluebird((resolve,reject) => {
+                user.comparePassword(req.body.password,(err, isMatch) => {
+                    if (isMatch){
+                        resolve();
+                    }else {
+                        reject();
+                    }
+                })
+            });
+        })
+        .then(() => {
+            return TenantOrder
                 .findOne({
                     where:{
-                        order_id: req.body.orderID
+                        tenant_order_id: req.body.tenantOrderID,
+                        tenant_id: req.body.tenantID,
                     }
                 })
         })
         .then((order) => {
             return new Bluebird((resolve,reject) => {
-                let settledAmount = order.get('amount_settle');
+                let settledAmount = order.get('total_amount_settled');
                 if (settledAmount >= req.body.refundAmount){
                     reject({error:'退款金额有误'});
                 }else {
-                    pingpp.charges.createRefund(order.get('order_no'),{amount: req.body.refundAmount, description:"refund "},(err,refund) => {
+                    pingpp.charges.createRefund(order.get('user_order_id'),{amount: req.body.refundAmount, description:"refund "},(err,refund) => {
                         if (err){
                             reject(err);
                         }else {
@@ -383,7 +418,7 @@ exports.postTenantRefundOrder = (req, res, next) => {
             return OrderRefunded
                 .findOrCreate({
                     where:{
-                        order_id:req.body.orderID
+                        tenant_order_id:req.body.tenantOrderID
                     },
                     defaults:{
                         object_id: refund.id,
@@ -435,8 +470,10 @@ let chargeSuccessHandler = (req,res) => {
         let orderID = jsonResult.data.object.order_no;
         let tran = sequelize.transaction();
         var addressID;
-        var couponID;
+        var couponIDs;
         var customerID;
+        var userOrderJson;
+        var tenantOrders;
         SwallowUtil
             .validatePingppSignature(req.headers['x-pingplusplus-signature'],dataResult)
             .then(() => {
@@ -445,39 +482,68 @@ let chargeSuccessHandler = (req,res) => {
                         where:{
                             order_id: orderID
                         },
+                        include:[
+                            {
+                                model:TenantOrder,
+                                as: 'TenantOrders'
+                            }
+                        ],
                         transaction: tran
                     })
             })
             .then((order) => {
-                addressID = order.get('user_address_id');
-                couponID = order.get('user_coupon_id');
+                userOrderJson = order.toJSON();
                 customerID = order.get('customer_id');
                 return order
                     .update({
                         total_amount: jsonResult.data.object.amount,
+                        total_amount_settled: jsonResult.data.object.amount,
                         order_status_code: OrderStatus.paymentReceived,
                         date_order_payed: new Date(),
                     },{
-                        fields:['total_amount','order_status_code','date_order_payed'],
+                        fields:['total_amount','order_status_code','date_order_payed','total_amount_settled'],
                         transaction: tran
                     })
             })
-            .then((order) => {
+            .then(() => {
+                tenantOrders = userOrderJson.TenantOrders;
+                var tempPromises = [];
+                tenantOrders.map((tenantOrder) => {
+                    let couponID = tenantOrder.user_coupon_id;
+                    if (couponID){
+                        couponIDs.push(couponID)
+                    }
+                    addressID = tenantOrder.user_address_id;
+                    let promise = TenantOrder
+                        .update({
+                            total_amount_settled: tenantOrder.total_amount,
+                            order_status_code: OrderStatus.paymentReceived,
+                            date_order_payed: new Date()
+                        },{
+                            where:{
+                                tenant_order_id: tenantOrder.tenant_order_id,
+                                user_coupon_id: tenantOrder.user_coupon_id
+                            },
+                            transaction: tran
+                        });
+                    tempPromises.push(promise);
+                    return new Bluebird
+                        .all(tempPromises)
+                        .timeOut(100 * 5)
+                });
+            })
+            .then(() => {
+
                 return UserCoupons
-                    .findOne({
-                        where:{
-                            user_id: customerID,
-                            user_coupon_id: couponID
-                        },
-                        transaction: tran
-                    })
-            })
-            .then((userCoupon) => {
-                return userCoupon
                     .update({
                         status: CouponStatusKV.used,
                     },{
                         fields: ['status'],
+                        where:{
+                            user_coupon_id:{
+                                in: couponIDs
+                            }
+                        },
                         transaction: tran
                     })
             })
@@ -493,21 +559,22 @@ let chargeSuccessHandler = (req,res) => {
             })
             .then((address) => {
                 let detailAddr = address.get('country') + ' ' + address.get('province') + ' ' + address.get('city') + ' ' + address.get('district') + ' ' + address.get('detail')
+                var deliverList = [];
+                tenantOrders.map((tenantOrder) => {
+                    var obj = {};
+                    obj.tenant_order_id = tenantOrder.tenant_order_id;
+                    obj.logistic_status = DeliverStauts.waitDeliver;
+                    obj.deliver_name = address.get('name');
+                    obj.deliver_phone = address.get('phone');
+                    obj.deliver_address = detailAddr;
+                    deliverList.push(obj);
+                });
                 return OrderDeliver
-                    .findOrCreate({
-                        where:{
-                            order_id: orderID
-                        },
-                        defaults:{
-                            logistic_status: DeliverStauts.waitDeliver,
-                            deliver_name: address.get('name'),
-                            deliver_phone: address.get('phone'),
-                            deliver_address: detailAddr
-                        },
+                    .bulkCreate(deliverList,{
                         transaction: tran
                     })
             })
-            .spread((orderDeliver,created) => {
+            .spread((delivers) => {
                 tran.commit();
                 return res.sendStatus(200);
             })
@@ -528,27 +595,26 @@ let refundSuccessHandler = (req,res) => {
     if (!jsonResult){
         res.sendStatus(400);
     }else {
-        let orderID = jsonResult.data.object.order_no;
+        var tenantOrerID;
+        var userOrderID;
+        var refundAmount = 0.0;
         let tran = sequelize.transaction();
         SwallowUtil
             .validatePingppSignature(req.headers["x-pingplusplus-signature"],dataResult)
             .then(() => {
-                return OrderModel
-                    .update({
-                        refund_settled: jsonResult.data.amount,
-                        order_status_code: OrderStatus.refunded
-                    },{
+                return OrderRefunded
+                    .findOne({
                         where:{
-                            order_id: orderID
+                            refund_id:jsonResult.id,
                         },
-                        fields:['refund_settled','order_status_code'],
                         transaction: tran
                     })
             })
-            .then((order) => {
-                return OrderRefunded
+            .then((orderRefund) => {
+                tenantOrerID = orderRefund.get('tenant_order_id');
+                refundAmount = (jsonResult.data.object.amount / 2.0).toFixed(2);
+                return orderRefund
                     .update({
-                        refund_id:jsonResult.id,
                         refund_created: jsonResult.created,
                         livemode:jsonResult.livemode,
                         type: jsonResult.type,
@@ -570,13 +636,39 @@ let refundSuccessHandler = (req,res) => {
                         charge_order_no: jsonResult.data.object.charge_order_no,
                         transaction_no: jsonResult.data.object.transaction_no
                     },{
-                        where:{
-                            order_id: order.get('order_id')
-                        },
-                        fields:['refund_id','refund_created','livemode','type','pending_webhooks','request','object','object_id',
+                        fields:['refund_created','livemode','type','pending_webhooks','request','object','object_id',
                                 'order_no','amount','created','succeed','status','time_succeed','description','failure_code','failure_msg',
                                 'metadata','charge','charge_order_no','transaction_no'],
                         transaction: tran
+                    })
+            })
+            .then((updated) => {
+                return TenantOrder
+                    .findOne({
+                        where:{
+                            tenant_order_id: tenantOrerID
+                        },
+                        transaction: tran
+                    })
+            })
+            .then((tenanatOrder) => {
+                userOrderID = tenanatOrder.get('user_order_id');
+                return tenanatOrder
+                    .update({
+                        refund_settled: refundAmount,
+                        order_status_code: OrderStatus.refunded
+                    },{
+                        transaction: tran
+                    })
+            })
+            .then(() => {
+                return OrderModel
+                    .update({
+                        order_status_code: OrderStatus.refunded
+                    },{
+                        where:{
+                            order_id: userOrderID
+                        }
                     })
             })
             .then(() => {

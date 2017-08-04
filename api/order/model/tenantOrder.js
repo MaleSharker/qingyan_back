@@ -27,16 +27,18 @@ const tenantOrder = (sequelize,DataTypes) => {
         //     type: DataTypes.INTEGER,
         //     allowNull: false
         // },
-        customer_id:{
+        customer_id:{ //顾客ID
             type:DataTypes.INTEGER,
             allowNull: false,
         },
-        customer_msg:{
+        customer_msg:{ //顾客留言
             type:DataTypes.STRING,
+        },
+        total_amount:{ //计算后订单应付金额
+            type: DataTypes.DECIMAL(10,2),
         },
         total_amount_settled:{//接收到订单支付成功后写入实际支付金额
             type:DataTypes.DECIMAL(10,2),
-            allowNull: false,
         },
         refund_amount:{ //申请退款金额
             type:DataTypes.DECIMAL(10,2)
@@ -58,17 +60,17 @@ const tenantOrder = (sequelize,DataTypes) => {
             allowNull: false,
             defaultValue: 10.00,
         },
-        order_status_code:{
+        order_status_code:{ //订单状态
             type:DataTypes.ENUM,
             values:OrderStatus,
             defaultValue: OrderStatusKV.pending
         },
-        date_order_created:{
+        date_order_created:{ //订单创建日期
             type:DataTypes.DATE,
             defaultValue: new Date(),
             allowNull: false
         },
-        date_order_payed:{
+        date_order_payed:{  //订单支付日期
             type:DataTypes.DATE
         },
         tenant_settled_amount:{//订单与商铺结算金额

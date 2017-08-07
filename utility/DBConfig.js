@@ -79,8 +79,6 @@ exports.configMysql = () => {
     //* * * * * */
     //商家优惠券
     const Coupons = sequelize.import(global.apiPathPrefix + '/api/tenants/models/coupons');
-    //用户优惠券
-    const UserCoupons = sequelize.import(global.apiPathPrefix + '/api/user/models/userCoupons');
     //物流详情
     const LogisticItems = sequelize.import(global.apiPathPrefix + '/api/order/model/logisticItems');
     //货运信息
@@ -101,7 +99,8 @@ exports.configMysql = () => {
     const Address = sequelize.import(global.apiPathPrefix + '/api/user/models/Address');
     //购物车列表
     const ShoppingCart = sequelize.import(global.apiPathPrefix + '/api/user/models/ShoppingCart');
-
+    //用户优惠券
+    const UserCoupons = sequelize.import(global.apiPathPrefix + '/api/user/models/userCoupons');
 
     Category.sync();
     Category.hasMany(SPU,{

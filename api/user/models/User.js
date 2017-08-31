@@ -24,6 +24,12 @@ const userSchema = new Schema({
         required: true
     },
 
+    priority:{
+        type: Number,
+        required: true,
+        default: 100,
+    },
+
     wechat: { type: String, default: ""},
     sina: { type: String,  default:"" },
     facebook: { type: String, default:"" },

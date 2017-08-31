@@ -402,6 +402,13 @@ exports.postUserList = (req, res, next) => {
 
     SwallowUtil
       .validateUser(req.headers.key, req.headers.token)
+      .then((user) => Promise((resolve,reject) => {
+          if (user.priority == 1000) {
+              resolve()
+          }else {
+              reject({error:"权限不够,无法访问"})
+          }
+      }))
       .then(() => {
           return User.find({})
             .skip(skipNum)

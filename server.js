@@ -15,6 +15,7 @@ const flash = require('express-flash');
 const path = require('path');
 const chalk = require('chalk');
 const passport = require('passport');
+const cors = require('cors');
 const fileUpload = require('express-fileupload');
 const expressValidator = require('express-validator');
 const expressStatusMonitor = require('express-status-monitor');
@@ -131,6 +132,15 @@ app.use((req, res, next) => {
 //     next();
 // });
 app.use(express.static(path.join(__dirname, 'uploads'), { maxAge: 31557600000 }));
+
+//浏览器跨域cors
+var corsConfig = {
+    'origin': '*',
+    'methods': 'GET,POST,DELETE',
+    'preflightContinue': false,
+    'optionsSuccessStatus': 204,
+};
+app.use(cors(corsConfig));
 
 productRoutes(app);
 userRoutes(app);

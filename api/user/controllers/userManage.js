@@ -28,7 +28,6 @@ exports.postSMSCode = (req, res, next) => {
         res.json({status:ErrorList.ErrorType.Error, result:{errors}, msg:'校验错误'});
         return;
     }
-
     if ((SwallowUtil.md5Encode(req.body.phone + process.env.SMS_ENCODE) !== req.body.verifyCode) || !SwallowUtil.verifyPhoneNumber(req.body.phone)) {
         res.json(ErrorList.RegisterVerifyCodeFailed({err:'校验失败'}));
         return;
@@ -148,8 +147,10 @@ exports.postSMSCode = (req, res, next) => {
  * @param next
  */
 exports.postPhoneSignup = (req, res, next) => {
+    req.assert('phone', 'check parameter phone').notEmpty();
     req.assert('verifyCode','Verify code is error').len(32);
     req.assert('code','SMS code is 6 length').len(6);
+    req.assert('password','password is error').len(32);
 
     const errors = req.validationErrors();
 
@@ -198,16 +199,18 @@ exports.postPhoneSignup = (req, res, next) => {
             }
 
             let token = SwallowUtil.genToken(req.body.phone);
+            let userID = user.userID;
             codeList.splice(index,1);
             user.verifyCode = codeList;
             user.token = token;
+            user.password = req.body.password;
             user
                 .save((err) => {
                     if (err) {
                         res.json({status:ErrorList.ErrorType.DBError,result:{err}, msg:''});
                         return
                     }
-                    res.json({status: ErrorList.ErrorType.Success, result:{token:token}, msg:'注册成功'});
+                    res.json({status: ErrorList.ErrorType.Success, result:{token:token,key:userID}, msg:'注册成功'});
                 });
         });
 
@@ -220,8 +223,9 @@ exports.postPhoneSignup = (req, res, next) => {
  */
 exports.postResetPwd = (req, res, next) => {
 
-    req.assert('password', 'parameters validate error').notEmpty();
-    // req.assert('').notEmpty();
+    req.assert('password', 'parameter password validate error').len(32);
+    req.assert('oldPassword', 'parameter oldPassword validate errror').len(32);
+
     let error = req.validationErrors();
     if (error){
         return res.json({status:ErrorList.ErrorType.ParameterError, result:{error}, msg:'parameters validate error'})
@@ -257,7 +261,7 @@ exports.postResetPwd = (req, res, next) => {
         })
         .catch((err) => {
             if (!res.finished){
-                res.json({status:ErrorList.ErrorType.Error, result:{err}, msg:''});
+                res.json({status:ErrorList.ErrorType.Error, result:{err}, msg:'密码错误'});
             }
         })
 };
@@ -268,9 +272,8 @@ exports.postResetPwd = (req, res, next) => {
  * @param res
  */
 exports.postPhoneLogin = (req, res, next) => {
-
     req.assert('password','check parameter password').notEmpty().len(32);
-    req.assert('phone','check parameter phone').notEmpty();
+    req.assert('phone','check parameter phone').len(11);
     let errors = req.validationErrors();
     if (errors){
         return res.json({status:ErrorList.ErrorType.ParameterError, result:{errors}, msg:'parameters validate error'})
@@ -367,11 +370,10 @@ exports.postSMSCodeLogin = (req, res, next) => {
             if (!user){
                 res.json({status:ErrorList.ErrorType.Error,result: {}, msg:'用户数据保存失败'})
             }else {
-                res.json({status:ErrorList.ErrorType.Success,result: {token:user.token}, msg:'用户登录成功'})
+                res.json({status:ErrorList.ErrorType.Success,result: {token:user.token,key:user.userID}, msg:'用户登录成功'})
             }
         })
         .catch((err) => {
-            console.log("- - - fuck");
             if (!res.finished){
                 res.json({status:ErrorList.ErrorType.Error, result:{err}, msg:'短信登录失败'});
             }
@@ -379,6 +381,43 @@ exports.postSMSCodeLogin = (req, res, next) => {
 
 };
 
+/**
+ * 获取用户列表 page 从 1 开始
+ */
+exports.postUserList = (req, res, next) => {
+
+    req.assert('itemsPerPage','Parameter itemsPerPage validate error').isInt();
+    req.assert('page','Parameter page validate error').isInt();
+
+    let error = req.validationErrors();
+    if (error) {
+        return res.json({status:0, result:{}, msg:'Parameter validate error'})
+    }
+
+    let itemsPerPage = parseInt(req.body.itemsPerPage);
+    let page = parseInt(req.body.page);
+
+    var skipNum = itemsPerPage * page;
+    skipNum = skipNum > 0 ? skipNum : 0;
+
+    SwallowUtil
+      .validateUser(req.headers.key, req.headers.token)
+      .then(() => {
+          return User.find({})
+            .skip(skipNum)
+            .limit(page)
+            .exec()
+      })
+      .then((users) => {
+          res.json({users});
+      })
+      .catch((error) => {
+          if (!res.finished) {
+              res.json({status: ErrorList.ErrorType.Error, result:{error}, msg:'获取用户列表失败'})
+          }
+      })
+
+};
 
 /**
  * 更新用户信息

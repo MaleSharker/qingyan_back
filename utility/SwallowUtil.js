@@ -17,7 +17,7 @@ var readFile = Bluebird.promisify(require('fs').readFile);
  * @returns {boolean}
  */
 const verifyPhoneNumber = (phoneNumber) => {
-    const regexp = /^0?(13[0-9]|15[012356789]|18[02356789]|14[57])[0-9]{8}$/;
+    const regexp = /^0?(13[0-9]|15[012356789]|17[0123456789]|18[02356789]|14[57])[0-9]{8}$/;
     return regexp.test(phoneNumber);
 };
 
@@ -41,7 +41,8 @@ exports.genSMSCode = () => {
  * @param original
  */
 exports.md5Encode = (original) => {
-    return crypto.createHash('md5').update(original,'utf8').digest('hex');
+    const md5 = crypto.createHash('md5').update(original,'utf8').digest('hex');
+    return md5;
 };
 
 /**
@@ -173,6 +174,7 @@ exports.validateSMSDate = (smsDate) => {
     if (smsDate !== undefined && (smsDate instanceof Date)){
         const fromDate = Math.floor((new Date(smsDate.toLocaleString())).getTime() / 1000 );
         const toDate = Math.floor(Date.now() / 1000);
+        console.log('from - - to - - ', fromDate, toDate);
         if (fromDate + 15 * 60 >= toDate){
             return true;
         }else {

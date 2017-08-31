@@ -40,6 +40,12 @@ module.exports = function (app) {
         .post(userManage.postSMSCodeLogin);
 
     /**
+     * 获取用户列表
+     */
+    app.route('/mgmt/v1/user/userList')
+      .post(userManage.postUserList);
+
+    /**
      * 更改用户信息
      */
     app.route('/client/v1/user/updateProfile')

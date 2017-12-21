@@ -32,22 +32,6 @@ dotenv.load({ path: '.env.production' });
 
 
 /**
- * routes
- */
-global.apiPathPrefix = __dirname;
-const productRoutes = require('./api/product/routes/productRoutes');
-const userRoutes = require('./api/user/routes/userRoutes');
-const tenantRoutes = require('./api/tenants/routes/tenantRoutes');
-const attriRoutes = require('./api/product/routes/attributeRoutes');
-
-const addressRoutes = require('./api/user/routes/addressRoutes');
-const shopCartRoutes = require('./api/user/routes/shopCartRoutes');
-const userCouponRoutes = require('./api/user/routes/couponRoutes');
-
-//Order
-const orderRoutes = require('./api/order/route/orderRoutes');
-
-/**
  * API keys and Passport configuration
  */
 const passportConfig = require('./config/passport');
@@ -141,6 +125,23 @@ var corsConfig = {
     'optionsSuccessStatus': 204,
 };
 app.use(cors(corsConfig));
+
+//路径匹配
+/**
+ * routes
+ */
+global.apiPathPrefix = __dirname;
+const productRoutes = require('./api/product/routes/productRoutes');
+const userRoutes = require('./api/user/routes/userRoutes');
+const tenantRoutes = require('./api/tenants/routes/tenantRoutes');
+const attriRoutes = require('./api/product/routes/attributeRoutes');
+
+const addressRoutes = require('./api/user/routes/addressRoutes');
+const shopCartRoutes = require('./api/user/routes/shopCartRoutes');
+const userCouponRoutes = require('./api/user/routes/couponRoutes');
+
+//Order
+const orderRoutes = require('./api/order/route/orderRoutes');
 
 productRoutes(app);
 userRoutes(app);
